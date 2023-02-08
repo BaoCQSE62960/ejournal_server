@@ -31,7 +31,7 @@ async function validateUser(req, res, next) {
   }
 }
 
-//UC LOGIN
+//Login
 router.post('/', validateUser,
   async (req, res) => {
     try {
@@ -52,5 +52,7 @@ router.post('/', validateUser,
     }
   }
 );
+
+//Register
 
 module.exports = router;

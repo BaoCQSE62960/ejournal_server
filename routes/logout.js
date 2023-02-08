@@ -16,7 +16,7 @@ async function checkSession(req, res, next) {
   }
 }
 
-//GET ROLE
+//GET Role
 router.get('/role', checkSession, async (req, res) => {
   try {
     res.status(200).json({ role: req.session.user.role });
