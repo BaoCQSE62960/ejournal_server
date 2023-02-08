@@ -7,6 +7,19 @@ const server = require('http').createServer(app);
 // route
 const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
+
+const adminRoute = require('./routes/admin');
+const authorRoute = require('./routes/author');
+const editorRoute = require('./routes/editor');
+
+const accountRoute = require('./routes/account');
+const majorRoute = require('./routes/major');
+const universityRoute = require('./routes/university');
+
+const profileRoute = require('./routes/profile');
+const articleRoute = require('./routes/article');
+const reviewRoute = require('./routes/review');
+const paymentRoute = require('./routes/payment');
 //other
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -63,6 +76,17 @@ async function checkUserSession(req, res, next) {
   }
 }
 app.use(checkUserSession);
+
+app.use('/admin', adminRoute);
+app.use('/author', authorRoute);
+app.use('/editor', editorRoute);
+app.use('/account', accountRoute);
+app.use('/major', majorRoute);
+app.use('/university', universityRoute);
+app.use('/profile', profileRoute);
+app.use('/article', articleRoute);
+app.use('/review', reviewRoute);
+app.use('/payment', paymentRoute);
 
 server.listen(PORT, () => {
   console.log('Server running...');
