@@ -7,10 +7,10 @@ router.get('/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, email, mailtype, status
-       FROM university
-       ORDER BY id
-       DESC
-       ;`
+        FROM university
+        ORDER BY id
+        DESC
+        ;`
       );
     res.status(200).json({ list: list.rows });
   } catch (error) {
