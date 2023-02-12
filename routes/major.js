@@ -7,10 +7,10 @@ router.get('/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, status
-       FROM major
-       ORDER BY id
-       DESC
-       ;`
+        FROM major
+        ORDER BY id
+        DESC
+        ;`
       );
     res.status(200).json({ list: list.rows });
   } catch (error) {
@@ -35,6 +35,24 @@ router.put('/add/', async (req, res) => {
 });
 
 //View major
+router.get('/info/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const list =
+      await pool.query(
+        `SELECT id, name, status
+        FROM major
+        WHERE id = $1
+        LIMIT 1
+        ;`,
+        [id]
+      );
+    res.status(200).json(list.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Update major
 
