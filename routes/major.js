@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, status
-        FROM major
+        FROM "major"
         ORDER BY id
         DESC
         ;`
@@ -41,7 +41,7 @@ router.get('/info/', async (req, res) => {
     const list =
       await pool.query(
         `SELECT id, name, status
-        FROM major
+        FROM "major"
         WHERE id = $1
         LIMIT 1
         ;`,

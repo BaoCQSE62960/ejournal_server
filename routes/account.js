@@ -8,8 +8,8 @@ router.get('/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT A.id, A.fullname, A.avatar, A.gender, A.email, A.phone, R.name AS rolename, A.status
-        FROM account AS A
-        JOIN role AS R
+        FROM "account" AS A
+        JOIN "role" AS R
         ON A.roleid = R.id
         ORDER BY id
         DESC
@@ -49,18 +49,17 @@ router.put('/add/', async (req, res) => {
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
   }
 });
-//processing
+
 //View account
 router.get('/info/', async (req, res) => {
   try {
-    //
     const { id } = req.body;
-    //
     const list =
       await pool.query(
-        `SELECT id, fullname, status
-        FROM account
-        WHERE id = $1
+        `SELECT A.id, A.username, A.password, A.fullname, A.avatar, A.gender, A.phone, A.email, A.status, R.name AS role
+        FROM "account" AS A
+        JOIN "role" AS R ON A.roleid = R.id 
+        WHERE A.id = $1
         LIMIT 1
         ;`,
         [id]

@@ -7,10 +7,10 @@ router.get('/role/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name
-       FROM role
-       ORDER BY id
-       DESC
-       ;`
+        FROM "role"
+        ORDER BY id
+        DESC
+        ;`
       );
     res.status(200).json({ list: list.rows });
   } catch (error) {
