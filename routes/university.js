@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, email, mailtype, status
-        FROM university
+        FROM "university"
         ORDER BY id
         DESC
         ;`
@@ -39,6 +39,24 @@ router.put('/add/', async (req, res) => {
 });
 
 //View university
+router.get('/info/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const list =
+      await pool.query(
+        `SELECT id, name, email, mailtype, status
+        FROM "university"
+        WHERE id = $1
+        LIMIT 1
+        ;`,
+        [id]
+      );
+    res.status(200).json(list.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Update university
 

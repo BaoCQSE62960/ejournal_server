@@ -8,7 +8,10 @@ async function validateUser(req, res, next) {
   try {
     const { username, password } = req.body;
     const userInformation = await pool.query(
-      'SELECT A.id, A.username, A.password, A.fullname,R.name AS role FROM "account" AS A JOIN "role" AS R ON A.roleid = R.id WHERE A.username = $1 LIMIT 1',
+      `SELECT A.id, A.username, A.password, A.fullname,R.name AS role 
+      FROM "account" AS A 
+      JOIN "role" AS R ON A.roleid = R.id 
+      WHERE A.username = $1 LIMIT 1`,
       [username]
     );
     if (userInformation.rows[0]) {
@@ -64,12 +67,12 @@ router.post('/register/',
       accesstype = '';
       const domain = email.split('@')[1];
       const listMailType =
-      await pool.query(`SELECT mailtype FROM university WHERE mailtype = $1`,
-        [
-          domain
-        ]
-      );
-      if(listMailType.rows[0]){
+        await pool.query(`SELECT mailtype FROM "university" WHERE mailtype = $1`,
+          [
+            domain
+          ]
+        );
+      if (listMailType.rows[0]) {
         accesstype = 'UNIVERSITY';
       } else {
         accesstype = 'PERSONAL';
@@ -79,19 +82,19 @@ router.post('/register/',
 
       // query
       const list =
-      await pool.query(`INSERT INTO "account"(username,password,fullname,avatar,gender,phone,email,accesstype,status,roleid) 
+        await pool.query(`INSERT INTO "account"(username,password,fullname,avatar,gender,phone,email,accesstype,status,roleid) 
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'OFFLINE',2) RETURNING id;`,
-        [
-          username,
-          hashPassword,
-          fullname,
-          avatar,
-          gender,
-          phone,
-          email,
-          accesstype
-        ]
-      );
+          [
+            username,
+            hashPassword,
+            fullname,
+            avatar,
+            gender,
+            phone,
+            email,
+            accesstype
+          ]
+        );
 
       res.status(200).json({ msg: 'Đăng ký thành công', accesstype: accesstype });
     } catch (error) {
