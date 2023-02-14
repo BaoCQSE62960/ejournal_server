@@ -8,7 +8,7 @@ async function validateUser(req, res, next) {
   try {
     const { username, password } = req.body;
     const userInformation = await pool.query(
-      `SELECT A.id, A.username, A.password, A.fullname, R.name AS role 
+      `SELECT A.id, A.username, A.password, A.fullname, A.avatar, R.name AS role 
       FROM "account" AS A 
       JOIN "role" AS R ON A.roleid = R.id 
       WHERE A.username = $1 LIMIT 1`,
@@ -47,7 +47,7 @@ router.post('/', validateUser,
         );
         res.status(200).json({
           role: req.session.user.role,
-          // avatar: req.session.user.avatar,
+          avatar: req.session.user.avatar,
           id: req.session.user.id,
           username: req.session.user.username,
         });
