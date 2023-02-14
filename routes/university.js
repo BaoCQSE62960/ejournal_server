@@ -24,7 +24,7 @@ router.put('/add/', async (req, res) => {
   try {
     const { name, email, mailtype } = req.body;
     const list =
-      await pool.query(`INSERT INTO "university"(name, email, mailtype, status) VALUES($1,'ACTIVE') RETURNING id;`,
+      await pool.query(`INSERT INTO "university"(name, email, mailtype, status) VALUES($1, $2, $3,'ACTIVE') RETURNING id;`,
         [
           name,
           email,
