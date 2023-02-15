@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const app = express();
 const PORT = process.env.PORT || 5000;
+var cors = require("cors");
 const server = require('http').createServer(app);
 // route
 const loginRoute = require('./routes/login');
@@ -21,6 +22,7 @@ const articleRoute = require('./routes/article');
 const reviewRoute = require('./routes/review');
 const paymentRoute = require('./routes/payment');
 //other
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

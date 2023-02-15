@@ -1,18 +1,19 @@
 const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
+const helpers = require('../utils/helpers');
 
 //GET Account list
 router.get('/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT A.id, A.fullname, A.avatar, A.gender, A.email, A.phone, R.name AS rolename, A.status
-       FROM account AS A
-       JOIN role AS R
-       ON A.roleid = R.id
-       ORDER BY id
-       DESC
-       ;`
+        FROM "account" AS A
+        JOIN "role" AS R
+        ON A.roleid = R.id
+        ORDER BY id
+        DESC
+        ;`
       );
     res.status(200).json({ list: list.rows });
   } catch (error) {
@@ -30,7 +31,9 @@ router.put('/add/', async (req, res) => {
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'OFFLINE',$9) RETURNING id;`,
         [
           username,
-          password,
+          await helpers.hashPassword(
+            password
+          ),
           fullname,
           avatar,
           gender,
@@ -40,19 +43,6 @@ router.put('/add/', async (req, res) => {
           roleid,
         ]
       );
-    if (list.rows[0]) {
-      if (
-        await helpers.validatePassword(
-          password,
-          userInformation.rows[0].password
-        )
-      ) {
-        req.session.user = userInformation.rows[0];
-        next();
-      } else {
-        res.status(400).json({ msg: 'Tên đăng nhập hoặc mật khẩu sai' });
-      }
-    }
     res.status(200).json();
   } catch (error) {
     console.log(error);
@@ -61,6 +51,25 @@ router.put('/add/', async (req, res) => {
 });
 
 //View account
+router.get('/info/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const list =
+      await pool.query(
+        `SELECT A.id, A.username, A.password, A.fullname, A.avatar, A.gender, A.phone, A.email, A.status, R.name AS role
+        FROM "account" AS A
+        JOIN "role" AS R ON A.roleid = R.id 
+        WHERE A.id = $1
+        LIMIT 1
+        ;`,
+        [id]
+      );
+    res.status(200).json(list.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Update account
 

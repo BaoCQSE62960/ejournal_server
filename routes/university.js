@@ -7,10 +7,10 @@ router.get('/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, email, mailtype, status
-       FROM university
-       ORDER BY id
-       DESC
-       ;`
+        FROM "university"
+        ORDER BY id
+        DESC
+        ;`
       );
     res.status(200).json({ list: list.rows });
   } catch (error) {
@@ -24,7 +24,7 @@ router.put('/add/', async (req, res) => {
   try {
     const { name, email, mailtype } = req.body;
     const list =
-      await pool.query(`INSERT INTO "university"(name, email, mailtype, status) VALUES($1,'ACTIVE') RETURNING id;`,
+      await pool.query(`INSERT INTO "university"(name, email, mailtype, status) VALUES($1, $2, $3,'ACTIVE') RETURNING id;`,
         [
           name,
           email,
@@ -39,6 +39,24 @@ router.put('/add/', async (req, res) => {
 });
 
 //View university
+router.get('/info/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const list =
+      await pool.query(
+        `SELECT id, name, email, mailtype, status
+        FROM "university"
+        WHERE id = $1
+        LIMIT 1
+        ;`,
+        [id]
+      );
+    res.status(200).json(list.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Update university
 
