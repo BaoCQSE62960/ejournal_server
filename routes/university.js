@@ -23,12 +23,12 @@ router.get('/', async (req, res) => {
 router.put('/add/', async (req, res) => {
   try {
     const { name, email, mailtype } = req.body;
-    const list =
+    const newMUniversity =
       await pool.query(`INSERT INTO "university"(name, email, mailtype, status) VALUES($1, $2, $3,'ACTIVE') RETURNING id;`,
         [
           name,
           email,
-          mailtype,
+          mailtype
         ]
       );
     res.status(200).json();
@@ -59,9 +59,57 @@ router.get('/info/', async (req, res) => {
 });
 
 //Update university
+router.put('/update/', async (req, res) => {
+  try {
+    const { id, name, email, mailtype } = req.body;
+    const updateUniversity = await pool.query(
+      `UPDATE "university" 
+      SET name = $2, 
+      email = $3, 
+      mailtype = $4 
+      WHERE id = $1`,
+      [
+        id,
+        name,
+        email,
+        mailtype
+      ]
+    );
+    res.status(200).json();
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Deactive university
+router.put('/deactive/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const deactiveUniversity = await pool.query(
+      `UPDATE "university" SET status = 'INACTIVE' WHERE id = $1`,
+      [id]
+    );
+    res.status(200).json();
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Active university
+router.put('/active/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const activeUniversity = await pool.query(
+      `UPDATE "university" SET status = 'ACTIVE' WHERE id = $1`,
+      [id]
+    );
+    res.status(200).json();
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 module.exports = router;
