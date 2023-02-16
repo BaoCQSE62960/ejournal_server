@@ -78,7 +78,7 @@ router.post('/register/',
           ]
         );
       if (listMailType.rows[0]) {
-        accesstype = 'UNIVERSITY';
+        accesstype = 'STUDENT';
       } else {
         accesstype = 'PERSONAL';
       }
