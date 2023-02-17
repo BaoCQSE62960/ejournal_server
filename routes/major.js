@@ -24,10 +24,13 @@ router.put('/add/', async (req, res) => {
   try {
     const { name } = req.body;
     const newMajor =
-      await pool.query(`INSERT INTO "major"(name,status) VALUES($1,'ACTIVE') RETURNING id;`,
+      await pool.query(`
+      INSERT INTO "major"(name,status) 
+      VALUES($1,'ACTIVE') 
+      RETURNING id, name, status;`,
         [name]
       );
-    res.status(200).json();
+    res.status(200).json(newMajor.rows);
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
