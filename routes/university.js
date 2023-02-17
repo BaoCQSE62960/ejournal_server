@@ -23,15 +23,18 @@ router.get('/', async (req, res) => {
 router.put('/add/', async (req, res) => {
   try {
     const { name, email, mailtype } = req.body;
-    const newMUniversity =
-      await pool.query(`INSERT INTO "university"(name, email, mailtype, status) VALUES($1, $2, $3,'ACTIVE') RETURNING id;`,
+    const newUniversity =
+      await pool.query(`
+      INSERT INTO "university"(name, email, mailtype, status) 
+      VALUES($1, $2, $3,'ACTIVE') 
+      RETURNING id, name, email, mailtype, status;`,
         [
           name,
           email,
           mailtype
         ]
       );
-    res.status(200).json();
+    res.status(200).json(newUniversity.rows);
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
