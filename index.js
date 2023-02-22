@@ -22,7 +22,7 @@ const articleRoute = require('./routes/article');
 const reviewRoute = require('./routes/review');
 const paymentRoute = require('./routes/payment');
 //other
-app.use(cors());
+app.use(cors({ credential: true, origin: "http://localhost:3000" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
