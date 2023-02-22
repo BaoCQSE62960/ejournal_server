@@ -85,7 +85,8 @@ app.use(checkUserSession);
 app.use('/admin', adminRoute);
 //app.use('/author', authorRoute);
 
-require('./routes/author.js')(app);
+ require('./routes/author.js')(app);
+ require('./routes/auth.js')(app);
 app.use('/editor', editorRoute);
 app.use('/account', accountRoute);
 app.use('/major', majorRoute);

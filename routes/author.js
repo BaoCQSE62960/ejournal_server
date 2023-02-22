@@ -1,5 +1,5 @@
 // const { Router } = require('express');
-// const router = Router();
+
 // const pool = require('../db');
 
 // //GET Personal article list
@@ -10,7 +10,8 @@
 
 const { authJwt } = require("../middleware");
 const controller = require("../controllers/accountControlle");
-const { functions } = require("lodash");
+
+
 
 
 module.exports = function (app) {
@@ -22,8 +23,17 @@ module.exports = function (app) {
     next();
   });
 
+
+  
+
   app.get("/api/all", controller.allAccess);
 
   app.get("/api/admin", [authJwt.verifyToken, authJwt.isAdmin], controller.adminBoard);
+
+  app.get("/api/member", [authJwt.verifyToken, authJwt.isMember], controller.memberBoard);
+   app.get("/api/author", [authJwt.verifyToken, authJwt.isAuthor], controller.authorBoard);
+  app.get("/api/reviewer", [authJwt.verifyToken, authJwt.isReviewer], controller.reviewerBoard);
+  app.get("/api/editor", [authJwt.verifyToken, authJwt.isEditor], controller.editorBoard);
+  app.get("/api/editor-in-chief", [authJwt.verifyToken, authJwt.isEditorInChief], controller.editorInChiefBoard);
 
 };

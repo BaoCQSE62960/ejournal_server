@@ -1,4 +1,4 @@
-const db = require("../models");
+const db = require("../models/index");
 const config = require("../config/authConfig");
 const Account = db.account;
 const Role = db.role;
@@ -7,12 +7,51 @@ const Op = db.Sequelize.Op;
 
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
-const { account } = require("../models");
+
+
+exports.signup = (req, res) => {
+  // Save User to Database
+  Account.create({
+    username: req.body.username,
+    password: bcrypt.hashSync(req.body.password, 8),
+    fullname: req.body.fullname,
+    avatar: req.body.avatar,
+    gender: req.body.gender,
+    phone: req.body.phone,
+    email: req.body.email,
+  })
+    .then(account => {
+      if (req.body.roles) {
+        Role.findAll({
+          where: {
+            name: {
+              [Op.or]: req.body.roles
+            }
+          }
+        }).then(roles => {
+          account.setRoles(roles).then(() => {
+            res.send({ message: "User was registered successfully!" });
+          });
+        });
+      } else {
+        // user role = 1
+        account.setRoles([1]).then(() => {
+          res.send({ message: "User was registered successfully!" });
+        });
+      }
+    })
+    .catch(err => {
+      res.status(500).send({ message: err.message });
+    });
+};
+
+
+
 
 exports.signin = (req, res) => {
     Account.findOne({
       where: {
-        username: req.body.userName
+        username: req.body.username
       }
     })
       .then(account => {
@@ -37,7 +76,7 @@ exports.signin = (req, res) => {
         });
   
         var authorities = [];
-        account.getRoles().then(roles => {
+        account.getRoleId().then(roles => {
           for (let i = 0; i < roles.length; i++) {
             authorities.push("ROLE_" + roles[i].name.toUpperCase());
           }
@@ -45,7 +84,7 @@ exports.signin = (req, res) => {
             id: account.id,
             username: account.userName,
             email: account.email,
-            roles: authorities,
+            //roles: authorities,
             accessToken: token
           });
         });
