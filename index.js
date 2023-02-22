@@ -10,7 +10,7 @@ const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
 
 const adminRoute = require('./routes/admin');
-const authorRoute = require('./routes/author');
+//const authorRoute = require('./routes/author');
 const editorRoute = require('./routes/editor');
 
 const accountRoute = require('./routes/account');
@@ -21,6 +21,9 @@ const profileRoute = require('./routes/profile');
 const articleRoute = require('./routes/article');
 const reviewRoute = require('./routes/review');
 const paymentRoute = require('./routes/payment');
+
+
+
 //other
 app.use(cors());
 app.use(express.json());
@@ -37,7 +40,7 @@ const knex = Knex({
   connection: {
     host: '127.0.0.1',
     user: 'postgres',
-    password: '123',
+    password: '54321',
     database: 'ejournal',
   },
 });
@@ -80,7 +83,9 @@ async function checkUserSession(req, res, next) {
 app.use(checkUserSession);
 
 app.use('/admin', adminRoute);
-app.use('/author', authorRoute);
+//app.use('/author', authorRoute);
+
+require('./routes/author.js')(app);
 app.use('/editor', editorRoute);
 app.use('/account', accountRoute);
 app.use('/major', majorRoute);
