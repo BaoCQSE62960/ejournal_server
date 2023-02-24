@@ -51,12 +51,12 @@ router.put('/add/', async (req, res) => {
 });
 
 //View account
-router.get('/info/', async (req, res) => {
+router.post('/info/', async (req, res) => {
   try {
     const { id } = req.body;
     const list =
       await pool.query(
-        `SELECT A.id, A.username, A.password, A.fullname, A.avatar, A.gender, A.phone, A.email, A.status, R.name AS role
+        `SELECT A.id, A.username, A.fullname, A.avatar, A.gender, A.phone, A.email, A.status, R.name AS role
         FROM "account" AS A
         JOIN "role" AS R ON A.roleid = R.id 
         WHERE A.id = $1
