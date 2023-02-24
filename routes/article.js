@@ -21,11 +21,9 @@ router.get('/', async (req, res) => {
 
       for (var i = 0; i < list.rows.length; i++) {
         var authorList = await pool.query(
-          `SELECT AU.fullname
-          FROM "articleauthor" AS AA
-          JOIN "article" AS A ON AA.articleid = A.id
-          JOIN "account" AS AU ON AA.accountid = AU.id
-          WHERE A.id = $1`,
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
           [list.rows[i].id]
         );
 
@@ -63,11 +61,9 @@ router.get('/info/', async (req, res) => {
       var author = [];
       for (var i = 0; i < selectedArticle.rows.length; i++) {
         var authorList = await pool.query(
-          `SELECT AU.fullname
-          FROM "articleauthor" AS AA
-          JOIN "article" AS A ON AA.articleid = A.id
-          JOIN "account" AS AU ON AA.accountid = AU.id
-          WHERE A.id = $1`,
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
           [id]
         );
 
@@ -193,11 +189,9 @@ router.get('/manuscript/', async (req, res) => {
 
       for (var i = 0; i < list.rows.length; i++) {
         var authorList = await pool.query(
-          `SELECT AA.id, AA.fullname, AA.email
-          FROM "articleauthor" AS AA
-          JOIN "article" AS A ON AA.articleid = A.id
-          JOIN "account" AS AU ON AA.accountid = AU.id
-          WHERE A.id = $1`,
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
           [list.rows[i].id]
         );
 
@@ -234,12 +228,11 @@ router.get('/manuscript/info/', async (req, res) => {
     if (selectedManuscript.rows[0]) {
       var author = [];
       for (var i = 0; i < selectedManuscript.rows.length; i++) {
+
         var authorList = await pool.query(
-          `SELECT AU.id, AU.fullname
-          FROM "articleauthor" AS AA
-          JOIN "article" AS A ON AA.articleid = A.id
-          JOIN "account" AS AU ON AA.accountid = AU.id
-          WHERE A.id = $1`,
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
           [id]
         );
 
@@ -284,14 +277,11 @@ router.get('/public/', async (req, res) => {
 
       for (var i = 0; i < list.rows.length; i++) {
         var authorList = await pool.query(
-          `SELECT AU.id, AU.fullname
-          FROM "articleauthor" AS AA
-          JOIN "article" AS A ON AA.articleid = A.id
-          JOIN "account" AS AU ON AA.accountid = AU.id
-          WHERE A.id = $1`,
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
           [id]
         );
-
         author.push(
           _.merge(list.rows[i], {
             author: authorList.rows,
