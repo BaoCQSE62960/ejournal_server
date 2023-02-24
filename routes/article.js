@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 
       for (var i = 0; i < list.rows.length; i++) {
         var authorList = await pool.query(
-          `SELECT AU.id, AU.fullname
+          `SELECT AU.fullname
           FROM "articleauthor" AS AA
           JOIN "article" AS A ON AA.articleid = A.id
           JOIN "account" AS AU ON AA.accountid = AU.id
@@ -63,7 +63,7 @@ router.get('/info/', async (req, res) => {
       var author = [];
       for (var i = 0; i < selectedArticle.rows.length; i++) {
         var authorList = await pool.query(
-          `SELECT AU.id, AU.fullname
+          `SELECT AU.fullname
           FROM "articleauthor" AS AA
           JOIN "article" AS A ON AA.articleid = A.id
           JOIN "account" AS AU ON AA.accountid = AU.id
@@ -109,10 +109,11 @@ router.post('/submit/', async (req, res) => {
 
     for (var x = 0; x < authorlist.length; x++) {
       var detailAuthor = await pool.query(
-        `INSERT INTO "articleauthor"(articleId,accountId) VALUES($1,$2)`,
+        `INSERT INTO "articleauthor"(articleId, fullname, email) VALUES($1,$2,$3)`,
         [
           newManuscript.rows[0].id,
-          authorlist[x].authorid,
+          authorlist[x].fullname,
+          authorlist[x].email,
         ]
       );
     }
@@ -124,27 +125,75 @@ router.post('/submit/', async (req, res) => {
 });
 
 //Edit manuscript
+//not available
 //* chỉ cho phép chỉnh sửa bản thảo khi chưa được assign reviewer
+//* chỉ có tác giả của bài viết được quyền chỉnh sửa
+router.put('/manuscript/update/', async (req, res) => {
+  try {
+    const { id, title, summary, content, openaccess, majorid, authorlist } = req.body;
+    var selectedManuscript =
+      await pool.query(`UPDATE "article"
+      SET title = $2, 
+      summary = $3, 
+      content = $4,
+      openaccess = $5,
+      majorid = $6 
+      WHERE id = $1`,
+        [
+          id,
+          title,
+          summary,
+          content,
+          openaccess,
+          majorid,
+        ]
+      );
+
+    const authorInformation = await pool.query(
+      `SELECT accountId, articleId 
+      FROM "articleauthor" 
+      WHERE articleId = $1`,
+      [id]
+    );
+
+    for (var x = 0; x < authorlist.length; x++) {
+      var detailAuthor = await pool.query(
+        `UPDATE "articleauthor"
+        SET accountId = $2
+        WHERE articleId = $1`,
+        [
+
+          id,
+          authorlist[x].authorid,
+        ]
+      );
+    }
+    res.status(200).json();
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //GET Manuscript list
 router.get('/manuscript/', async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
-        FROM "article" AS J 
-        JOIN "major" AS M
-        ON J.majorid = M.id
-        WHERE J.status != 'ACCEPTED'
-        ORDER BY id
-        DESC
-        ;`
+      FROM "article" AS J 
+      JOIN "major" AS M
+      ON J.majorid = M.id
+      WHERE J.status != 'ACCEPTED'
+      ORDER BY id
+      DESC
+      ;`
       );
     if (list.rows[0]) {
       var author = [];
 
       for (var i = 0; i < list.rows.length; i++) {
         var authorList = await pool.query(
-          `SELECT AU.id, AU.fullname
+          `SELECT AA.id, AA.fullname, AA.email
           FROM "articleauthor" AS AA
           JOIN "article" AS A ON AA.articleid = A.id
           JOIN "account" AS AU ON AA.accountid = AU.id
