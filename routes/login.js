@@ -3,6 +3,7 @@ const { split } = require('lodash');
 const router = Router();
 const pool = require('./../db');
 const helpers = require('./../utils/helpers');
+const jwt = require('jsonwebtoken');
 
 async function validateUser(req, res, next) {
   try {
@@ -21,6 +22,9 @@ async function validateUser(req, res, next) {
           userInformation.rows[0].password
         )
       ) {
+
+        const token = jwt.sign({ id: user.rows[0].id }, 'your_secret_key');
+        res.json({ token });
         req.session.user = userInformation.rows[0];
         next();
       } else {
@@ -51,6 +55,8 @@ router.post('/', validateUser,
           id: req.session.user.id,
           username: req.session.user.username,
         });
+        
+        console.log(token);
       } else {
         req.session.destroy();
         res.status(400).json({ msg: 'Lỗi hệ thống' });

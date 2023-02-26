@@ -4,7 +4,7 @@ const Account = db.account;
 const Role = db.role;
 
 const Op = db.Sequelize.Op;
-
+helpers = require('../utils/helpers');
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
 
@@ -63,6 +63,10 @@ exports.signin = (req, res) => {
           req.body.password,
           account.password
         );
+        // var passwordIsValid = helpers.validatePassword(
+        //   req.body.password,
+        //   account.password
+        // )
   
         if (!passwordIsValid) {
           return res.status(401).send({
@@ -76,7 +80,7 @@ exports.signin = (req, res) => {
         });
   
         var authorities = [];
-        account.getRoleId().then(roles => {
+        account.getRoles().then(roles => {
           for (let i = 0; i < roles.length; i++) {
             authorities.push("ROLE_" + roles[i].name.toUpperCase());
           }
