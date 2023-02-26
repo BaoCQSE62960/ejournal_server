@@ -4,6 +4,8 @@ const router = Router();
 const pool = require('./../db');
 const helpers = require('./../utils/helpers');
 const jwt = require('jsonwebtoken');
+const config = require("../config/authConfig");
+
 
 async function validateUser(req, res, next) {
   try {
@@ -23,7 +25,7 @@ async function validateUser(req, res, next) {
         )
       ) {
 
-        const token = jwt.sign({ id: user.rows[0].id }, 'your_secret_key');
+        const token = jwt.sign({ id: user.rows[0].id }, config.secret);
         res.json({ token });
         req.session.user = userInformation.rows[0];
         next();
