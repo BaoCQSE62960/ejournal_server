@@ -2,9 +2,11 @@ const { Router } = require('express');
 const router = Router();
 const pool = require('../db.js');
 const helpers = require('../utils/helpers');
+const { authJwt } = require("../middleware");
+
 
 //GET Account list
-router.get('/', async (req, res) => {
+router.get('/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT A.id, A.fullname, A.avatar, A.gender, A.email, A.phone, R.name AS rolename, A.status
@@ -23,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 //Add account
-router.put('/add/', async (req, res) => {
+router.put('/add/', [authJwt.verifyToken, authJwt.isAdmin],async (req, res) => {
   try {
     const { username, password, fullname, avatar, gender, phone, email, accesstype, roleid } = req.body;
     const newAccount =
@@ -51,7 +53,7 @@ router.put('/add/', async (req, res) => {
 });
 
 //View account
-router.post('/info/', async (req, res) => {
+router.post('/info/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
   try {
     const { id } = req.body;
     const list =
@@ -72,7 +74,7 @@ router.post('/info/', async (req, res) => {
 });
 
 //Update account
-router.put('/update/', async (req, res) => {
+router.put('/update/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
   try {
     const { id, roleid } = req.body;
     const updateAccount = await pool.query(
@@ -92,7 +94,7 @@ router.put('/update/', async (req, res) => {
 });
 
 //Deactive account
-router.put('/deactive/', async (req, res) => {
+router.put('/deactive/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveAccount = await pool.query(
@@ -107,7 +109,7 @@ router.put('/deactive/', async (req, res) => {
 });
 
 //Active account
-router.put('/active/', async (req, res) => {
+router.put('/active/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
   try {
     const { id } = req.body;
     const activeAccount = await pool.query(

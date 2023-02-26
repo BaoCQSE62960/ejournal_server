@@ -1,9 +1,10 @@
 const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
+const { authJwt } = require("../middleware");
 
 //GET Role list
-router.get('/role/', async (req, res) => {
+router.get('/role/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name
