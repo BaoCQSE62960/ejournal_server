@@ -23,11 +23,14 @@ router.get('/', async (req, res) => {
 router.put('/add/', async (req, res) => {
   try {
     const { name } = req.body;
-    const list =
-      await pool.query(`INSERT INTO "major"(name,status) VALUES($1,'ACTIVE') RETURNING id;`,
+    const newMajor =
+      await pool.query(`
+      INSERT INTO "major"(name,status) 
+      VALUES($1,'ACTIVE') 
+      RETURNING id, name, status;`,
         [name]
       );
-    res.status(200).json();
+    res.status(200).json(newMajor.rows);
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
@@ -55,9 +58,53 @@ router.get('/info/', async (req, res) => {
 });
 
 //Update major
+router.put('/update/', async (req, res) => {
+  try {
+    const { id, name } = req.body;
+    const updateMajor = await pool.query(
+      `UPDATE "major" 
+      SET name = $2 
+      WHERE id = $1`,
+      [
+        id,
+        name
+      ]
+    );
+    res.status(200).json();
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Deactive major
+router.put('/deactive/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const deactiveMajor = await pool.query(
+      `UPDATE "major" SET status = 'INACTIVE' WHERE id = $1`,
+      [id]
+    );
+    res.status(200).json();
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 //Active major
+router.put('/active/', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const activeMajor = await pool.query(
+      `UPDATE "major" SET status = 'ACTIVE' WHERE id = $1`,
+      [id]
+    );
+    res.status(200).json();
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
 module.exports = router;

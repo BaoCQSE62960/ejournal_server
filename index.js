@@ -21,8 +21,11 @@ const profileRoute = require('./routes/profile');
 const articleRoute = require('./routes/article');
 const reviewRoute = require('./routes/review');
 const paymentRoute = require('./routes/payment');
+
+
+
 //other
-app.use(cors());
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -37,7 +40,7 @@ const knex = Knex({
   connection: {
     host: '127.0.0.1',
     user: 'postgres',
-    password: '123',
+    password: '54321',
     database: 'ejournal',
   },
 });
@@ -81,6 +84,9 @@ app.use(checkUserSession);
 
 app.use('/admin', adminRoute);
 app.use('/author', authorRoute);
+
+ //require('./routes/author.js')(app);
+//  require('./routes/auth.js')(app);
 app.use('/editor', editorRoute);
 app.use('/account', accountRoute);
 app.use('/major', majorRoute);
@@ -93,3 +99,19 @@ app.use('/payment', paymentRoute);
 server.listen(PORT, () => {
   console.log('Server running...');
 });
+
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize('ejournal', 'postgres', '54321', {
+  host: 'localhost',
+  dialect: "postgres",
+});
+
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connection has been established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
+})();
