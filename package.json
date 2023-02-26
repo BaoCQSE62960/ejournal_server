@@ -13,16 +13,22 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
     "compression": "^1.7.4",
     "connect-session-knex": "^3.0.0",
     "cors": "^2.8.5",
-    "express": "^4.18.1",
+    "express": "^4.18.2",
     "express-session": "^1.17.3",
     "express-validator": "^6.14.2",
+    "install": "^0.13.0",
+    "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.21",
     "node": "^16.13.2",
     "nodemon": "^2.0.20",
-    "pg": "^8.8.0",
-    "randomstring": "^1.2.2"
+    "npm": "^9.4.2",
+    "pg": "^8.9.0",
+    "pg-hstore": "^2.3.4",
+    "randomstring": "^1.2.2",
+    "sequelize": "^6.28.1"
   }
 }

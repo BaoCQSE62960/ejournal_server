@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const router = Router();
-const pool = require('../db');
+const pool = require('../db.js');
 const helpers = require('../utils/helpers');
 
 //GET Account list
