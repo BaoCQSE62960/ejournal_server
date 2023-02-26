@@ -35,46 +35,7 @@ router.put('/changepassword/', async (req, res) => {
 });
 
 //View personal profile
-router.get('/', async (req, res) => {
-    try {
-      const list =
-        await pool.query(
-          `SELECT id, fullname, avatar, gender, phone, email 
-          FROM "account" 
-          WHERE id = $1
-          LIMIT 1
-          ;`,
-          [req.session.user.id]
-        );
-      res.status(200).json(list.rows);
-    } catch (error) {
-      console.log(error);
-      res.status(400).json({ msg: 'Lỗi hệ thống!' });
-    }
-  });
 
 //Update personal profile
-router.put('/update/', async (req, res) => {
-    try {
-      const { fullname, avatar, gender, phone, email } = req.body;
-      const updateProfile = await pool.query(
-        `UPDATE "account" 
-        SET fullname = $2, avatar = $3, gender = $4, phone = $5, email = $6 
-        WHERE id = $1`,
-        [
-          req.session.user.id,
-          fullname,
-          avatar,
-          gender,
-          phone,
-          email
-        ]
-      );
-      res.status(200).json();
-    } catch (error) {
-      console.log(error);
-      res.status(400).json({ msg: 'Lỗi hệ thống!' });
-    }
-  });
 
 module.exports = router;
