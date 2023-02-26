@@ -7,33 +7,30 @@
 // //GET Personal manuscript list
 
 // module.exports = router;
-
+const { Router } = require('express');
 const { authJwt } = require("../middleware");
 const controller = require("../controllers/accountControlle");
+const router = Router();
 
 
 
-
-module.exports = function (app) {
-  app.use(function (req, res, next) {
+async function headerCross(req, res , next) {
+  
     res.header(
       "Access-Control-Allow-Headers",
       "x-access-token, Origin, Content-Type, Accept"
     );
     next();
-  });
-
-
-  
-
-  app.get("/api/all", controller.allAccess);
-
-  app.get("/api/admin", [authJwt.verifyToken, authJwt.isAdmin], controller.adminBoard);
-
-  app.get("/api/member", [authJwt.verifyToken, authJwt.isMember], controller.memberBoard);
-   app.get("/api/author", [authJwt.verifyToken, authJwt.isAuthor], controller.authorBoard);
-  app.get("/api/reviewer", [authJwt.verifyToken, authJwt.isReviewer], controller.reviewerBoard);
-  app.get("/api/editor", [authJwt.verifyToken, authJwt.isEditor], controller.editorBoard);
-  app.get("/api/editor-in-chief", [authJwt.verifyToken, authJwt.isEditorInChief], controller.editorInChiefBoard);
-
 };
+router.get("/api/all",headerCross, controller.allAccess);
+
+  router.get("/api/admin",headerCross, [authJwt.verifyToken, authJwt.isAdmin], controller.adminBoard);
+
+  router.get("/api/member",headerCross, [authJwt.verifyToken, authJwt.isMember], controller.memberBoard);
+  router.get("/api/author",headerCross, [authJwt.verifyToken, authJwt.isAuthor], controller.authorBoard);
+  router.get("/api/reviewer",headerCross, [authJwt.verifyToken, authJwt.isReviewer], controller.reviewerBoard);
+  router.get("/api/editor",headerCross, [authJwt.verifyToken, authJwt.isEditor], controller.editorBoard);
+  router.get("/api/editor-in-chief",headerCross, [authJwt.verifyToken, authJwt.isEditorInChief], controller.editorInChiefBoard);
+  
+  
+  module.exports = router;
