@@ -6,12 +6,11 @@ const helpers = require('./../utils/helpers');
 const jwt = require('jsonwebtoken');
 const config = require("../config/authConfig");
 
-
 async function validateUser(req, res, next) {
   try {
     const { username, password } = req.body;
     const userInformation = await pool.query(
-      `SELECT A.id, A.username, A.password, A.fullname, A.avatar, R.name AS role 
+      `SELECT A.id, A.username, A.password, A.fullname, A.email, A.avatar, R.name AS role 
       FROM "account" AS A 
       JOIN "role" AS R ON A.roleid = R.id 
       WHERE A.username = $1 LIMIT 1`,
@@ -24,7 +23,6 @@ async function validateUser(req, res, next) {
           userInformation.rows[0].password
         )
       ) {
-
         const token = jwt.sign({ id: userInformation.rows[0].id }, config.secret);
         req.session.user = userInformation.rows[0];
         req.session.token = token;
@@ -50,17 +48,18 @@ router.post('/', validateUser,
         const updateUserStatus = await pool.query(
           'Update "account" SET status = \'ONLINE\' WHERE id=$1',
           [req.session.user.id]
-         );
-         
-        
+        );
+
         res.status(200).json({
           role: req.session.user.role,
           avatar: req.session.user.avatar,
           id: req.session.user.id,
           username: req.session.user.username,
+          fullname: req.session.user.fullname,
+          email: req.session.user.email,
           accessToken: req.session.token,
         });
-      
+
       } else {
         req.session.destroy();
         res.status(400).json({ msg: 'Lỗi hệ thống' });
