@@ -5,7 +5,7 @@ const { authJwt } = require("../middleware");
 
 
 //GET University list
-router.get('/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
+router.get('/',authJwt.isAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, email, mailtype, status
@@ -22,7 +22,7 @@ router.get('/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
 });
 
 //Add university
-router.put('/add/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
+router.put('/add/',authJwt.isAdmin, async (req, res) => {
   try {
     const { name, email, mailtype } = req.body;
     const newUniversity =
@@ -44,7 +44,7 @@ router.put('/add/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
 });
 
 //View university
-router.get('/info/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
+router.get('/info/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const list =
@@ -64,7 +64,7 @@ router.get('/info/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => 
 });
 
 //Update university
-router.put('/update/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
+router.put('/update/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id, name, email, mailtype } = req.body;
     const updateUniversity = await pool.query(
@@ -88,7 +88,7 @@ router.put('/update/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) =
 });
 
 //Deactive university
-router.put('/deactive/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
+router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveUniversity = await pool.query(
@@ -103,7 +103,7 @@ router.put('/deactive/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res)
 });
 
 //Active university
-router.put('/active/',[authJwt.verifyToken, authJwt.isAdmin], async (req, res) => {
+router.put('/active/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeUniversity = await pool.query(

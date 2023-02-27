@@ -6,8 +6,7 @@ const { authJwt } = require("../middleware");
 
 
 //Change password
-router.put('/changepassword/',[authJwt.verifyToken, authJwt.isMember, 
-  authJwt.isAuthor,authJwt.isEditor,authJwt.isReviewer], async (req, res) => {
+router.put('/changepassword/',authJwt.isMember, async (req, res) => {
     try {
         const userId = req.session.user.id;
         const { oldPassword, newPassword } = req.body;
@@ -38,8 +37,8 @@ router.put('/changepassword/',[authJwt.verifyToken, authJwt.isMember,
 });
 
 //View personal profile
-router.get('/',[authJwt.verifyToken, authJwt.isMember, 
-  authJwt.isAuthor,authJwt.isEditor,authJwt.isReviewer], async (req, res) => {
+router.get('/',
+ authJwt.isMember, async (req, res) => {
     try {
       const list =
         await pool.query(
@@ -58,8 +57,7 @@ router.get('/',[authJwt.verifyToken, authJwt.isMember,
   });
 
 //Update personal profile
-router.put('/update/',[authJwt.verifyToken, authJwt.isMember, 
-  authJwt.isAuthor,authJwt.isEditor,authJwt.isReviewer], async (req, res) => {
+router.put('/update/',authJwt.isMember, async (req, res) => {
     try {
       const { fullname, avatar, gender, phone, email } = req.body;
       const updateProfile = await pool.query(
