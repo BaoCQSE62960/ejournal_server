@@ -11,7 +11,7 @@ class sob {
   static WAITING = 'WAITING';
   static PENDING = 'PENDING';
   static REVIEWED = 'REVIEWED';
-  static REVIDE = 'REVIDE';
+  static REVISE = 'REVISE';
   static UNIVERSITY = 'UNIVERSITY';
   static PERSONAL = 'PERSONAL';
   static STUDENT = 'STUDENT';
