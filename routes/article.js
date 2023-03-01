@@ -34,10 +34,12 @@ async function checkCorresponding(req, res, next) {
   try {
     const { id, title, summary, content, openaccess, majorid, authorlist } = req.body;
     const correspondingAuthor = await pool.query(
-      `SELECT AA.id, AA.articleid, AA.accountid , A.fullname AS fullname, A.email AS email, AA.iscorresponding
+      `SELECT AA.id, AA.articleid, AA.accountid , A.fullname AS fullname, A.email AS email, M.status AS status, AA.iscorresponding
       FROM "articleauthor" AS AA 
       JOIN "account" AS A 
       ON A.id = AA.accountid 
+      JOIN "article" AS M 
+      ON M.id = AA.articleid 
       WHERE AA.articleid = $1 
       AND AA.accountid = $2 
       AND AA.iscorresponding = $3 
@@ -49,9 +51,24 @@ async function checkCorresponding(req, res, next) {
       ]
     );
     if (correspondingAuthor.rows[0]) {
+      req.session.article = correspondingAuthor.rows[0];
       next();
     } else {
       res.status(400).json({ msg: `Vai trò của tác giả không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
+async function checkArticleStatus(req, res, next) {
+  try {
+    if ((req.session.article.status == sob.WAITING)
+      || req.session.article.status == sob.REVISE) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Không được phép cập nhật` });
     }
   } catch (error) {
     console.log(error);
@@ -142,7 +159,7 @@ router.get('/info/', async (req, res) => {
 
 //Submit article (author)
 //* Nếu user là member, thay đổi role của user thành author
-//* Nếu user là author thì chỉ submit article
+//DONE Nếu user là author thì chỉ submit article
 //* danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
 router.post(
   '/submit/', checkRoleSubmit, async (req, res) => {
@@ -181,35 +198,40 @@ router.post(
   });
 
 //Edit manuscript (author)
-//* chỉ cho phép chỉnh sửa bản thảo khi chưa được assign reviewer
+/* chỉ cho phép chỉnh sửa bản thảo khi status là REVISE hoặc
+khi trạng thái là WAITING và chưa được assign reviewer */
 //* danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
-//* chỉ có corresponding author được quyền chỉnh sửa
+//DONE chỉ có corresponding author được quyền chỉnh sửa
 router.put('/manuscript/update/',
   checkRoleAuthor,
   checkCorresponding,
+  checkArticleStatus,
   async (req, res) => {
     try {
-      var selectedManuscript =
-        await pool.query(`UPDATE "article"
-      SET title = $2, 
-      summary = $3, 
-      content = $4,
-      openaccess = $5,
-      majorid = $6 
-      WHERE id = $1`,
-          [
-            req.body.id,
-            req.body.title,
-            req.body.summary,
-            req.body.content,
-            req.body.openaccess,
-            req.body.majorid,
-          ]
-        );
+      var selectedManuscript = await pool.query(
+        `UPDATE "article" 
+        SET title = $2, 
+        summary = $3, 
+        content = $4, 
+        openaccess = $5, 
+        majorid = $6, 
+        status = $7 
+        WHERE id = $1`,
+        [
+          req.body.id,
+          req.body.title,
+          req.body.summary,
+          req.body.content,
+          req.body.openaccess,
+          req.body.majorid,
+          sob.WAITING,
+        ]
+      );
 
       for (var i = 0; i < req.body.authorlist.length; i++) {
         var deleteAuthor = await pool.query(
-          `DELETE FROM "articleauthor" WHERE articleId = $1 AND iscorresponding = $2`,
+          `DELETE FROM "articleauthor" 
+          WHERE articleId = $1 AND iscorresponding = $2`,
           [
             req.body.id,
             false,
@@ -237,7 +259,7 @@ router.put('/manuscript/update/',
 
 //Delete manuscript (author)
 //* chỉ cho phép xóa bản thảo khi chưa được assign reviewer
-//* chỉ có corresponding author được quyền xóa
+//DONE chỉ có corresponding author được quyền xóa
 router.delete('/manuscript/delete/',
   checkRoleAuthor,
   checkCorresponding,
@@ -261,46 +283,6 @@ router.delete('/manuscript/delete/',
       res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
   });
-
-//GET Manuscript list (Editor)
-router.get('/manuscript/', async (req, res) => {
-  try {
-    const list =
-      await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
-      FROM "article" AS J 
-      JOIN "major" AS M
-      ON J.majorid = M.id
-      WHERE J.status != 'ACCEPTED'
-      ORDER BY id
-      DESC
-      ;`
-      );
-    if (list.rows[0]) {
-      var author = [];
-
-      for (var i = 0; i < list.rows.length; i++) {
-        var authorList = await pool.query(
-          `SELECT fullname, email 
-          FROM "articleauthor" 
-          WHERE articleId = $1`,
-          [list.rows[i].id]
-        );
-
-        author.push(
-          _.merge(list.rows[i], {
-            author: authorList.rows,
-          })
-        );
-      }
-      res.status(200).json({ list: list.rows });
-    } else {
-      res.status(400).json({ msg: 'Không tìm thấy thông tin' });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống!' });
-  }
-});
 
 //View manuscript details (author, reviewer, editor)
 router.get('/manuscript/info/', async (req, res) => {
