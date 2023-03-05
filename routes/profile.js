@@ -2,9 +2,11 @@ const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
 const helpers = require('./../utils/helpers');
+const { authJwt } = require("../middleware");
+
 
 //Change password
-router.put('/changepassword/', async (req, res) => {
+router.put('/changepassword/',authJwt.isMember, async (req, res) => {
     try {
         const userId = req.session.user.id;
         const { oldPassword, newPassword } = req.body;
@@ -35,7 +37,8 @@ router.put('/changepassword/', async (req, res) => {
 });
 
 //View personal profile
-router.get('/', async (req, res) => {
+router.get('/',
+ authJwt.isMember, async (req, res) => {
     try {
       const list =
         await pool.query(
@@ -54,7 +57,7 @@ router.get('/', async (req, res) => {
   });
 
 //Update personal profile
-router.put('/update/', async (req, res) => {
+router.put('/update/',authJwt.isMember, async (req, res) => {
     try {
       const { fullname, avatar, gender, phone, email } = req.body;
       const updateProfile = await pool.query(

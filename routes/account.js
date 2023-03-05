@@ -1,10 +1,12 @@
 const { Router } = require('express');
 const router = Router();
-const pool = require('../db');
+const pool = require('../db.js');
 const helpers = require('../utils/helpers');
+const { authJwt } = require("../middleware");
+
 
 //GET Account list
-router.get('/', async (req, res) => {
+router.get('/',authJwt.isAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT A.id, A.fullname, A.avatar, A.gender, A.email, A.phone, R.name AS rolename, A.status
@@ -23,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 //Add account
-router.put('/add/', async (req, res) => {
+router.put('/add/', authJwt.isAdmin,async (req, res) => {
   try {
     const { username, password, fullname, avatar, gender, phone, email, accesstype, roleid } = req.body;
     const newAccount =
@@ -51,12 +53,12 @@ router.put('/add/', async (req, res) => {
 });
 
 //View account
-router.get('/info/', async (req, res) => {
+router.post('/info/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const list =
       await pool.query(
-        `SELECT A.id, A.username, A.password, A.fullname, A.avatar, A.gender, A.phone, A.email, A.status, R.name AS role
+        `SELECT A.id, A.username, A.fullname, A.avatar, A.gender, A.phone, A.email, A.status, R.name AS role
         FROM "account" AS A
         JOIN "role" AS R ON A.roleid = R.id 
         WHERE A.id = $1
@@ -72,7 +74,7 @@ router.get('/info/', async (req, res) => {
 });
 
 //Update account
-router.put('/update/', async (req, res) => {
+router.put('/update/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id, roleid } = req.body;
     const updateAccount = await pool.query(
@@ -92,7 +94,7 @@ router.put('/update/', async (req, res) => {
 });
 
 //Deactive account
-router.put('/deactive/', async (req, res) => {
+router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveAccount = await pool.query(
@@ -107,7 +109,7 @@ router.put('/deactive/', async (req, res) => {
 });
 
 //Active account
-router.put('/active/', async (req, res) => {
+router.put('/active/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeAccount = await pool.query(

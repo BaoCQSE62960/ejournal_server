@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
-
+const { authJwt } = require("../middleware");
 //GET Major list
-router.get('/', async (req, res) => {
+router.get('/',authJwt.isAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, status
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 });
 
 //Add major
-router.put('/add/', async (req, res) => {
+router.put('/add/',authJwt.isAdmin, async (req, res) => {
   try {
     const { name } = req.body;
     const newMajor =
@@ -38,7 +38,7 @@ router.put('/add/', async (req, res) => {
 });
 
 //View major
-router.get('/info/', async (req, res) => {
+router.get('/info/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const list =
@@ -58,7 +58,7 @@ router.get('/info/', async (req, res) => {
 });
 
 //Update major
-router.put('/update/', async (req, res) => {
+router.put('/update/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id, name } = req.body;
     const updateMajor = await pool.query(
@@ -78,7 +78,7 @@ router.put('/update/', async (req, res) => {
 });
 
 //Deactive major
-router.put('/deactive/', async (req, res) => {
+router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveMajor = await pool.query(
@@ -93,7 +93,7 @@ router.put('/deactive/', async (req, res) => {
 });
 
 //Active major
-router.put('/active/', async (req, res) => {
+router.put('/active/',authJwt.isAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeMajor = await pool.query(
