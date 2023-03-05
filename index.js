@@ -10,7 +10,7 @@ const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
 
 const adminRoute = require('./routes/admin');
-const authorRoute = require('./routes/author');
+const authorizeRoute = require('./routes/authorize');
 const editorRoute = require('./routes/editor');
 
 const accountRoute = require('./routes/account');
@@ -83,7 +83,7 @@ async function checkUserSession(req, res, next) {
 app.use(checkUserSession);
 
 app.use('/admin', adminRoute);
-app.use('/author', authorRoute);
+app.use('/authorize', authorizeRoute);
 
  //require('./routes/author.js')(app);
 //  require('./routes/auth.js')(app);
