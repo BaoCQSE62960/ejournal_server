@@ -158,39 +158,76 @@ router.get('/info/', async (req, res) => {
 });
 
 //Submit article (author)
+//inprocess
 //* Nếu user là member, thay đổi role của user thành author
 //DONE Nếu user là author thì chỉ submit article
 //* danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
+/* Nếu author có tài khoản trong danh sách account thì khi điển đúng
+email và fullname, hệ thống sẽ tự động thêm accountId tương ứng */
 router.post(
   '/submit/', checkRoleSubmit, async (req, res) => {
     try {
       const { title, summary, content, openaccess, majorid, authorlist } = req.body;
 
-      var newManuscript =
-        await pool.query(`INSERT INTO "article"(title,summary,content,openaccess,creatorid,creationtime,status,majorid) 
-        VALUES($1,$2,$3,$4,$5,CURRENT_TIMESTAMP,'WAITING',$6) RETURNING id;`,
+      if (req.session.user.role == sob.MEMBER) {
+        var roleUpdate = await pool.query(
+          `UPDATE "account" SET roleid = $2 WHERE id = $1`,
           [
-            title,
-            summary,
-            content,
-            openaccess,
             req.session.user.id,
-            majorid,
+            sob.AUTHOR_ID,
           ]
         );
+      } else {
+        var newManuscript =
+          await pool.query(`INSERT INTO "article"(title,summary,content,openaccess,creatorid,creationtime,status,majorid) 
+          VALUES($1,$2,$3,$4,$5,CURRENT_TIMESTAMP,$6,$7) RETURNING id;`,
+            [
+              title,
+              summary,
+              content,
+              openaccess,
+              req.session.user.id,
+              sob.WAITING,
+              majorid,
+            ]
+          );
 
-      for (var x = 0; x < authorlist.length; x++) {
-        var detailAuthor = await pool.query(
-          `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
-          [
-            newManuscript.rows[0].id,
-            authorlist[x].fullname,
-            authorlist[x].email,
-            authorlist[x].iscorresponding,
-          ]
-        );
+        for (var x = 0; x < authorlist.length; x++) {
+          var authorItem = await pool.query(
+            `SELECT id, fullname, email
+            FROM "account" 
+            WHERE fullname = $1 
+            AND email = $2`,
+            [
+              authorlist[x].fullname,
+              authorlist[x].email,
+            ]
+          );
+
+          for (var i = 0; i < authorItem.length; i++) {
+            var detailAccountAuthor = await pool.query(
+              `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
+              [
+                newManuscript.rows[0].id,
+                authorItem.rows[i].id,
+                authorItem.rows[i].fullname,
+                authorItem.rows[i].email,
+                authorlist[x].iscorresponding,
+              ]
+            );
+          }
+          var detailFreeAuthor = await pool.query(
+            `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
+            [
+              newManuscript.rows[0].id,
+              authorlist[x].fullname,
+              authorlist[x].email,
+              authorlist[x].iscorresponding,
+            ]
+          );
+        }
+        res.status(200).json();
       }
-      res.status(200).json();
     } catch (error) {
       console.log(error);
       res.status(400).json({ msg: 'Lỗi hệ thống!' });
@@ -259,10 +296,8 @@ router.put('/manuscript/update/',
 
 //Delete manuscript (author)
 //* chỉ cho phép xóa bản thảo khi chưa được assign reviewer
-//DONE chỉ có corresponding author được quyền xóa
 router.delete('/manuscript/delete/',
   checkRoleAuthor,
-  checkCorresponding,
   async (req, res) => {
     try {
       const { id } = req.body;

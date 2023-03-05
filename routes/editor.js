@@ -33,8 +33,7 @@ async function checkRoleEditorInChief(req, res, next) {
 //GET Manuscript list (Editor)
 router.get('/manuscript/', checkRoleEditor, async (req, res) => {
     try {
-      const list =
-        await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
+        const list = await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
         FROM "article" AS J 
         JOIN "major" AS M
         ON J.majorid = M.id
@@ -43,32 +42,32 @@ router.get('/manuscript/', checkRoleEditor, async (req, res) => {
         DESC
         ;`
         );
-      if (list.rows[0]) {
-        var author = [];
-  
-        for (var i = 0; i < list.rows.length; i++) {
-          var authorList = await pool.query(
-            `SELECT fullname, email 
-            FROM "articleauthor" 
-            WHERE articleId = $1`,
-            [list.rows[i].id]
-          );
-  
-          author.push(
-            _.merge(list.rows[i], {
-              author: authorList.rows,
-            })
-          );
+        if (list.rows[0]) {
+            var author = [];
+
+            for (var i = 0; i < list.rows.length; i++) {
+                var authorList = await pool.query(
+                    `SELECT fullname, email 
+                    FROM "articleauthor" 
+                    WHERE articleId = $1`,
+                    [list.rows[i].id]
+                );
+
+                author.push(
+                    _.merge(list.rows[i], {
+                        author: authorList.rows,
+                    })
+                );
+            }
+            res.status(200).json({ list: list.rows });
+        } else {
+            res.status(400).json({ msg: 'Không tìm thấy thông tin' });
         }
-        res.status(200).json({ list: list.rows });
-      } else {
-        res.status(400).json({ msg: 'Không tìm thấy thông tin' });
-      }
     } catch (error) {
-      console.log(error);
-      res.status(400).json({ msg: 'Lỗi hệ thống!' });
+        console.log(error);
+        res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-  });
+});
 
 //Accept article
 router.put('/accept/', checkRoleEditor, async (req, res) => {

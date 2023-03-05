@@ -1,11 +1,25 @@
 const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
-const { authJwt } = require("../middleware");
+// const { authJwt } = require("../middleware");
+const sob = require('../staticObj');
 
+async function checkRoleAdmin(req, res, next) {
+  try {
+    if (req.session.user.role == sob.ADMIN) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
 
 //GET University list
-router.get('/',authJwt.isAdmin, async (req, res) => {
+// router.get('/',authJwt.isAdmin, async (req, res) => {
+router.get('/', checkRoleAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, email, mailtype, status
@@ -22,7 +36,8 @@ router.get('/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Add university
-router.put('/add/',authJwt.isAdmin, async (req, res) => {
+// router.put('/add/',authJwt.isAdmin, async (req, res) => {
+router.put('/add/', checkRoleAdmin, async (req, res) => {
   try {
     const { name, email, mailtype } = req.body;
     const newUniversity =
@@ -44,7 +59,8 @@ router.put('/add/',authJwt.isAdmin, async (req, res) => {
 });
 
 //View university
-router.get('/info/',authJwt.isAdmin, async (req, res) => {
+// router.get('/info/',authJwt.isAdmin, async (req, res) => {
+router.get('/info/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const list =
@@ -64,7 +80,8 @@ router.get('/info/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Update university
-router.put('/update/',authJwt.isAdmin, async (req, res) => {
+// router.put('/update/',authJwt.isAdmin, async (req, res) => {
+router.put('/update/', checkRoleAdmin, async (req, res) => {
   try {
     const { id, name, email, mailtype } = req.body;
     const updateUniversity = await pool.query(
@@ -88,7 +105,8 @@ router.put('/update/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Deactive university
-router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
+// router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
+router.put('/deactive/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveUniversity = await pool.query(
@@ -103,7 +121,8 @@ router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Active university
-router.put('/active/',authJwt.isAdmin, async (req, res) => {
+// router.put('/active/',authJwt.isAdmin, async (req, res) => {
+router.put('/active/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeUniversity = await pool.query(

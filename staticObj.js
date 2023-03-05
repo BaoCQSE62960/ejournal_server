@@ -6,6 +6,12 @@ class sob {
   static REVIEWER = 'REVIEWER';
   static EDITOR = 'EDITOR';
   static CEDITOR = 'EDITOR_IN_CHIEF';
+  static ADMIN_ID = '1';
+  static MEMBER_ID = '2';
+  static AUTHOR_ID = '3';
+  static REVIEWER_ID = '4';
+  static EDITOR_ID = '5';
+  static CEDITOR_ID = '6';
   static ACCEPTED = 'ACCEPTED';
   static REJECTED = 'REJECTED';
   static WAITING = 'WAITING';
