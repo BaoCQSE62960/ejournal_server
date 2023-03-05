@@ -100,7 +100,7 @@ verifyToken = (req, res, next) => {
         
         
         else {
-          res.status(401).send("Access denied");
+          res.status(401).send("Vai trò của người dùng không phù hợp");
         }
       }
 
@@ -120,7 +120,7 @@ verifyToken = (req, res, next) => {
         
         
         else {
-          res.status(401).send("Access denied");
+          res.status(401).send("Vai trò của người dùng không phù hợp");
         }
       }
 
@@ -140,7 +140,7 @@ verifyToken = (req, res, next) => {
         
         
         else {
-          res.status(401).send("Access denied");
+          res.status(401).send("vai trò người dùng không phù hợp");
         }
 
       }
@@ -163,7 +163,7 @@ verifyToken = (req, res, next) => {
         
         
         else {
-          res.status(401).send("Access denied role reviewer");
+          res.status(401).send("Vai trò của người dùng không phù hợp");
         }
       }
 
@@ -185,7 +185,7 @@ verifyToken = (req, res, next) => {
         
         
         else {
-          res.status(401).send("Access denied");
+          res.status(401).send("Vai trò của người dùng không phù hợp");
         }
       }
 
@@ -205,7 +205,7 @@ verifyToken = (req, res, next) => {
         
         
         else {
-          res.status(401).send("Access denied");
+          res.status(401).send("Vai trò của người dùng không phù hợp");
         }
       }
 
