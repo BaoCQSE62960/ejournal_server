@@ -5,6 +5,8 @@ const pool = require('./../db');
 const helpers = require('./../utils/helpers');
 const jwt = require('jsonwebtoken');
 const config = require("../config/authConfig");
+var nodemailer = require('nodemailer');
+const sob = require('../staticObj');
 
 async function validateUser(req, res, next) {
   try {
@@ -39,6 +41,36 @@ async function validateUser(req, res, next) {
   }
 }
 
+var transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: sob.TRANSPORT_EMAIL,
+    pass: sob.TRANSPORT_PASS
+  }
+});
+
+async function sendEmail(req, res, email, title, text) {
+  var mailOptions = {
+    from: sob.TRANSPORT_EMAIL,
+    to: email,
+    subject: title,
+    text: text
+  };
+
+  try {
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log('Email sent! ');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi gửi mail' });
+  }
+}
+
 //Login
 router.post('/', validateUser,
   async (req, res) => {
@@ -46,8 +78,11 @@ router.post('/', validateUser,
       //Get user information
       if (req.session.user) {
         const updateUserStatus = await pool.query(
-          'Update "account" SET status = \'ONLINE\' WHERE id=$1',
-          [req.session.user.id]
+          'Update "account" SET status = $2 WHERE id=$1',
+          [
+            req.session.user.id,
+            sob.ONLINE
+          ]
         );
 
         res.status(200).json({
@@ -82,14 +117,12 @@ router.post('/register/',
       const domain = email.split('@')[1];
       const listMailType =
         await pool.query(`SELECT mailtype FROM "university" WHERE mailtype = $1`,
-          [
-            domain
-          ]
+          [domain]
         );
       if (listMailType.rows[0]) {
-        accesstype = 'STUDENT';
+        accesstype = sob.STUDENT;
       } else {
-        accesstype = 'PERSONAL';
+        accesstype = sob.PERSONAL;
       }
       // password
       const hashPassword = await helpers.hashPassword(password);
@@ -97,7 +130,7 @@ router.post('/register/',
       // query
       const list =
         await pool.query(`INSERT INTO "account"(username,password,fullname,avatar,gender,phone,email,accesstype,status,roleid) 
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,'OFFLINE',2) RETURNING id;`,
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id;`,
           [
             username,
             hashPassword,
@@ -106,11 +139,19 @@ router.post('/register/',
             gender,
             phone,
             email,
-            accesstype
+            accesstype,
+            sob.OFFLINE,
+            sob.MEMBER_ID
           ]
         );
 
       res.status(200).json({ msg: 'Đăng ký thành công', accesstype: accesstype });
+      if (res.status(200)) {
+        sendEmail(req, res,
+          email,
+          sob.REGISTER_MAIL_TITLE,
+          sob.REGISTER_MAIL_CONTENT);
+      }
     } catch (error) {
       console.log(error);
       res.status(400).json({ msg: 'Lỗi hệ thống' });

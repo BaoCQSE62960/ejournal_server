@@ -2,11 +2,25 @@ const { Router } = require('express');
 const router = Router();
 const pool = require('../db.js');
 const helpers = require('../utils/helpers');
-const { authJwt } = require("../middleware");
+// const { authJwt } = require("../middleware");
+const sob = require('../staticObj');
 
+async function checkRoleAdmin(req, res, next) {
+  try {
+    if (req.session.user.role == sob.ADMIN) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
 
 //GET Account list
-router.get('/',authJwt.isAdmin, async (req, res) => {
+// router.get('/',authJwt.isAdmin, async (req, res) => {
+router.get('/', checkRoleAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT A.id, A.fullname, A.avatar, A.gender, A.email, A.phone, R.name AS rolename, A.status
@@ -25,35 +39,35 @@ router.get('/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Add account
-router.put('/add/', authJwt.isAdmin,async (req, res) => {
-  try {
-    const { username, password, fullname, avatar, gender, phone, email, accesstype, roleid } = req.body;
-    const newAccount =
-      await pool.query(`INSERT INTO "account"(username,password,fullname,avatar,gender,phone,email,accesstype,status,roleid) 
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,'OFFLINE',$9) RETURNING id;`,
-        [
-          username,
-          await helpers.hashPassword(
-            password
-          ),
-          fullname,
-          avatar,
-          gender,
-          phone,
-          email,
-          accesstype,
-          roleid,
-        ]
-      );
-    res.status(200).json();
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống!' });
-  }
-});
+// router.put('/add/', checkRoleAdmin, async (req, res) => {
+//   try {
+//     const { username, password, fullname, avatar, gender, phone, email, accesstype, roleid } = req.body;
+//     const newAccount =
+//       await pool.query(`INSERT INTO "account"(username,password,fullname,avatar,gender,phone,email,accesstype,status,roleid) 
+//       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'OFFLINE',$9) RETURNING id;`,
+//         [
+//           username,
+//           await helpers.hashPassword(
+//             password
+//           ),
+//           fullname,
+//           avatar,
+//           gender,
+//           phone,
+//           email,
+//           accesstype,
+//           roleid,
+//         ]
+//       );
+//     res.status(200).json();
+//   } catch (error) {
+//     console.log(error);
+//     res.status(400).json({ msg: 'Lỗi hệ thống!' });
+//   }
+// });
 
 //View account
-router.post('/info/',authJwt.isAdmin, async (req, res) => {
+router.post('/info/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const list =
@@ -74,7 +88,7 @@ router.post('/info/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Update account
-router.put('/update/',authJwt.isAdmin, async (req, res) => {
+router.put('/update/', checkRoleAdmin, async (req, res) => {
   try {
     const { id, roleid } = req.body;
     const updateAccount = await pool.query(
@@ -94,12 +108,15 @@ router.put('/update/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Deactive account
-router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
+router.put('/deactive/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveAccount = await pool.query(
-      `UPDATE "account" SET status = 'INACTIVE' WHERE id = $1`,
-      [id]
+      `UPDATE "account" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.INACTIVE
+      ]
     );
     res.status(200).json();
   } catch (error) {
@@ -109,12 +126,15 @@ router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Active account
-router.put('/active/',authJwt.isAdmin, async (req, res) => {
+router.put('/active/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeAccount = await pool.query(
-      `UPDATE "account" SET status = 'OFFLINE' WHERE id = $1`,
-      [id]
+      `UPDATE "account" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.OFFLINE
+      ]
     );
     res.status(200).json();
   } catch (error) {
