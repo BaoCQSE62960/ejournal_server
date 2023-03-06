@@ -12,7 +12,7 @@ const logoutRoute = require('./routes/logout');
 const authorizeRoute = require('./routes/authorize');
 
 const adminRoute = require('./routes/admin');
-const authorizeRoute = require('./routes/authorize');
+const authorRoute = require('./routes/author');
 const editorRoute = require('./routes/editor');
 
 const accountRoute = require('./routes/account');
