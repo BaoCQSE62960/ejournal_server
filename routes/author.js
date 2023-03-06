@@ -1,36 +1,107 @@
-// const { Router } = require('express');
-
-// const pool = require('../db');
-
-// //GET Personal article list
-
-// //GET Personal manuscript list
-
-// module.exports = router;
 const { Router } = require('express');
-const { authJwt } = require("../middleware");
-const controller = require("../controllers/accountControlle");
 const router = Router();
+const pool = require('../db');
+const sob = require('../staticObj');
 
+async function checkRoleAuthor(req, res, next) {
+  try {
+    if (req.session.user.role == sob.AUTHOR) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
 
-
-async function headerCross(req, res , next) {
-  
-    res.header(
-      "Access-Control-Allow-Headers",
-      "x-access-token, Origin, Content-Type, Accept"
+async function checkCorresponding(req, res, next) {
+  try {
+    const correspondingAuthor = await pool.query(
+      `SELECT A.iscorresponding
+      FROM "articleauthor" AS A
+      JOIN "account" AS U
+      ON U.id = A.accountid 
+      WHERE A.accountid = $2 
+      AND A.iscorresponding = $3 
+      LIMIT 1`,
+      [
+        req.session.user.id,
+        true,
+      ]
     );
-    next();
-};
-router.get("/api/all",headerCross, controller.allAccess);
+    if (correspondingAuthor.rows[0]) {
+      req.session.article = correspondingAuthor.rows[0];
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của tác giả không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
 
-  router.get("/api/admin",headerCross, [authJwt.verifyToken, authJwt.isAdmin], controller.adminBoard);
+//GET Personal article list
+router.get('/article/', checkRoleAuthor, async (req, res) => {
+  try {
+    const list =
+      await pool.query(`SELECT J.id, J.title, M.name as majorname
+        FROM "article" AS J 
+        JOIN "articleauthor" AS A
+        ON J.articleid = A.articleid
+        JOIN "major" AS M
+        ON J.majorid = M.id
+        WHERE J.status = $1 
+        AND A.accountid = $2
+        ORDER BY id
+        DESC
+        ;`,
+        [
+          sob.ACCEPTED,
+          req.session.user.id
+        ]
+      );
+    if (list.rows[0]) {
+      res.status(200).json({ list: list.rows });
+    } else {
+      res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
 
-  router.get("/api/member",headerCross, [authJwt.verifyToken, authJwt.isMember], controller.memberBoard);
-  router.get("/api/author",headerCross, [authJwt.verifyToken, authJwt.isAuthor], controller.authorBoard);
-  router.get("/api/reviewer",headerCross, [authJwt.verifyToken, authJwt.isReviewer], controller.reviewerBoard);
-  router.get("/api/editor",headerCross, [authJwt.verifyToken, authJwt.isEditor], controller.editorBoard);
-  router.get("/api/editor-in-chief",headerCross, [authJwt.verifyToken, authJwt.isEditorInChief], controller.editorInChiefBoard);
-  
-  
-  module.exports = router;
+//GET Personal manuscript list
+router.get('/manuscript/', checkCorresponding, async (req, res) => {
+  try {
+    const list =
+      await pool.query(`SELECT J.id, J.title, M.name as majorname
+          FROM "article" AS J 
+          JOIN "articleauthor" AS A
+          ON J.articleid = A.articleid
+          JOIN "major" AS M
+          ON J.majorid = M.id
+          WHERE J.status != $1 
+          AND A.accountid = $2
+          ORDER BY id
+          DESC;`,
+        [
+          sob.ACCEPTED,
+          req.session.user.id
+        ]
+      );
+    if (list.rows[0]) {
+      res.status(200).json({ list: list.rows });
+    } else {
+      res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
+module.exports = router;

@@ -36,16 +36,18 @@ router.get('/', checkRoleAdmin, async (req, res) => {
 });
 
 //Add major
-// router.put('/add/',authJwt.isAdmin, async (req, res) => {
 router.put('/add/', checkRoleAdmin, async (req, res) => {
   try {
     const { name } = req.body;
     const newMajor =
       await pool.query(`
-      INSERT INTO "major"(name,status) 
-      VALUES($1,'ACTIVE') 
+      INSERT INTO "major"(name, status) 
+      VALUES($1, $2) 
       RETURNING id, name, status;`,
-        [name]
+        [
+          name,
+          sob.ACTIVE
+        ]
       );
     res.status(200).json(newMajor.rows);
   } catch (error) {
@@ -55,7 +57,6 @@ router.put('/add/', checkRoleAdmin, async (req, res) => {
 });
 
 //View major
-// router.get('/info/',authJwt.isAdmin, async (req, res) => {
 router.get('/info/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
@@ -76,7 +77,6 @@ router.get('/info/', checkRoleAdmin, async (req, res) => {
 });
 
 //Update major
-// router.put('/update/',authJwt.isAdmin, async (req, res) => {
 router.put('/update/', checkRoleAdmin, async (req, res) => {
   try {
     const { id, name } = req.body;
@@ -97,13 +97,15 @@ router.put('/update/', checkRoleAdmin, async (req, res) => {
 });
 
 //Deactive major
-// router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
 router.put('/deactive/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveMajor = await pool.query(
-      `UPDATE "major" SET status = 'INACTIVE' WHERE id = $1`,
-      [id]
+      `UPDATE "major" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.INACTIVE
+      ]
     );
     res.status(200).json();
   } catch (error) {
@@ -113,13 +115,15 @@ router.put('/deactive/', checkRoleAdmin, async (req, res) => {
 });
 
 //Active major
-// router.put('/active/',authJwt.isAdmin, async (req, res) => {
 router.put('/active/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeMajor = await pool.query(
-      `UPDATE "major" SET status = 'ACTIVE' WHERE id = $1`,
-      [id]
+      `UPDATE "major" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.ACTIVE
+      ]
     );
     res.status(200).json();
   } catch (error) {

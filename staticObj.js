@@ -26,6 +26,16 @@ class sob {
   static ONLINE = 'ONLINE';
   static OFFLINE = 'OFFLINE';
   static EMPTY = 'EMPTY';
+  static TRANSPORT_EMAIL = 'kungfuharuka@gmail.com';
+  static TRANSPORT_PASS = 'aajoivgytvybfwxe';
+  static ACCEPT_MAIL_TITLE = 'Bài báo đã được duyệt';
+  static REJECT_MAIL_TITLE = 'Bài báo đã bị từ chối';
+  static REVISE_MAIL_TITLE = 'Bài báo cần chỉnh sửa';
+  static REGISTER_MAIL_TITLE = 'Đăng ký thành công';
+  static ACCEPT_MAIL_CONTENT = 'Biên tập viên đã duyệt bài báo của bạn.';
+  static REJECT_MAIL_CONTENT = 'Biên tập viên đã từ chối bài báo của bạn.';
+  static REVISE_MAIL_CONTENT = 'Biên tập viên đề xuất bài báo của bạn cần được chỉnh sửa.';
+  static REGISTER_MAIL_CONTENT = 'Bạn đã đăng ký tài khoản thành công.';
 }
 
 module.exports = sob;

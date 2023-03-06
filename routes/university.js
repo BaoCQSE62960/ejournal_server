@@ -36,19 +36,19 @@ router.get('/', checkRoleAdmin, async (req, res) => {
 });
 
 //Add university
-// router.put('/add/',authJwt.isAdmin, async (req, res) => {
 router.put('/add/', checkRoleAdmin, async (req, res) => {
   try {
     const { name, email, mailtype } = req.body;
     const newUniversity =
       await pool.query(`
       INSERT INTO "university"(name, email, mailtype, status) 
-      VALUES($1, $2, $3,'ACTIVE') 
+      VALUES($1, $2, $3, $4) 
       RETURNING id, name, email, mailtype, status;`,
         [
           name,
           email,
-          mailtype
+          mailtype,
+          sob.ACTIVE
         ]
       );
     res.status(200).json(newUniversity.rows);
@@ -59,7 +59,6 @@ router.put('/add/', checkRoleAdmin, async (req, res) => {
 });
 
 //View university
-// router.get('/info/',authJwt.isAdmin, async (req, res) => {
 router.get('/info/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
@@ -80,7 +79,6 @@ router.get('/info/', checkRoleAdmin, async (req, res) => {
 });
 
 //Update university
-// router.put('/update/',authJwt.isAdmin, async (req, res) => {
 router.put('/update/', checkRoleAdmin, async (req, res) => {
   try {
     const { id, name, email, mailtype } = req.body;
@@ -105,13 +103,15 @@ router.put('/update/', checkRoleAdmin, async (req, res) => {
 });
 
 //Deactive university
-// router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
 router.put('/deactive/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveUniversity = await pool.query(
-      `UPDATE "university" SET status = 'INACTIVE' WHERE id = $1`,
-      [id]
+      `UPDATE "university" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.INACTIVE
+      ]
     );
     res.status(200).json();
   } catch (error) {
@@ -121,13 +121,15 @@ router.put('/deactive/', checkRoleAdmin, async (req, res) => {
 });
 
 //Active university
-// router.put('/active/',authJwt.isAdmin, async (req, res) => {
 router.put('/active/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeUniversity = await pool.query(
-      `UPDATE "university" SET status = 'ACTIVE' WHERE id = $1`,
-      [id]
+      `UPDATE "university" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.ACTIVE
+      ]
     );
     res.status(200).json();
   } catch (error) {

@@ -48,16 +48,16 @@ router.post('/assign/', checkRoleEditor, async (req, res) => {
     const creatorid = req.session.user.id;
     const { articleid, reviewerid } = req.body;
 
-    const statusarticle =
+    const statusArticle =
       await pool.query(`UPDATE "article" 
         SET status = 'PENDING' 
         WHERE id = $1`,
         [articleid]
       );
 
-    var createreview =
-      await pool.query(`INSERT INTO "review"(articleid,accountid, creatorid ,creationtime) 
-        VALUES($1,$2,$3 ,CURRENT_TIMESTAMP) RETURNING id;`,
+    var createReview =
+      await pool.query(`INSERT INTO "review"(articleid, accountid, creatorid, creationtime) 
+        VALUES($1,$2,$3,CURRENT_TIMESTAMP) RETURNING id;`,
         [
           articleid,
           reviewerid,
@@ -78,11 +78,13 @@ router.get('/pending/', checkRoleReviewer, async (req, res) => {
     const reviewerid = req.session.user.id;
 
     const list =
-      await pool.query(`SELECT A.id, A.status
-          FROM "article" AS A, "articleauthor" as AA
-          WHERE A.status = 'PENDING' AND A.id = AA.articleid AND AA.accountid = $1
-          ORDER BY id
-          DESC`,
+      await pool.query(`SELECT A.id, A.title, M.name as majorname
+        FROM "article" AS A, 
+        JOIN "review" AS R ON A.id = R.articleid 
+        JOIN "major" AS M ON A.majorid = M.id 
+        WHERE A.status = 'PENDING' AND R.accountid = $1
+        ORDER BY id
+        DESC`,
         [reviewerid]
       );
 
@@ -94,15 +96,13 @@ router.get('/pending/', checkRoleReviewer, async (req, res) => {
 });
 
 //View review (editor, author)
-router.get('/view/', checkRoleViewAllReview, async (req, res) => {
+router.get('/view/all/', checkRoleViewAllReview, async (req, res) => {
   try {
-    const { reviewid } = req.body;
+    const { articleid } = req.body;
 
     const list =
-      await pool.query(`SELECT *
-            FROM "review"
-            WHERE id = $1`,
-        [reviewid]
+      await pool.query(`SELECT * FROM "review" WHERE articleid = $1`,
+        [articleid]
       );
 
     res.status(200).json({ list: list.rows });
@@ -115,14 +115,19 @@ router.get('/view/', checkRoleViewAllReview, async (req, res) => {
 //Submit review (reviewer)
 router.put('/submit/', checkRoleReviewer, async (req, res) => {
   try {
-    const { id, content, suggest } = req.body;
+    const { articleid, content, suggest } = req.body;
 
-    var submitreview =
-      await pool.query(`UPDATE "review" SET content = $1, suggest = $2 WHERE id = $3`,
+    var submitReview =
+      await pool.query(`UPDATE "review" 
+        SET content = $3, 
+        suggest = $4 
+        WHERE articleid = $1 
+        AND accountid = $2`,
         [
+          articleid,
+          req.session.user.id,
           content,
-          suggest,
-          id,
+          suggest
         ]
       );
 
@@ -137,10 +142,16 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
 router.get('/reviews/', checkRoleReviewer, async (req, res) => {
   try {
     const userId = req.session.user.id;
+    const { articleid } = req.body;
 
     const list =
-      await pool.query(`SELECT id, content FROM "review" WHERE accountid = $1`,
-        [userId]
+      await pool.query(`SELECT id, content FROM "review" 
+        WHERE accountid = $1
+        AND articleid = $2`,
+        [
+          userId,
+          articleid
+        ]
       );
 
     res.status(200).json({ list: list.rows });
@@ -156,13 +167,13 @@ router.get('/articlereviewed/', checkRoleReviewer, async (req, res) => {
     const userId = req.session.user.id;
 
     const list =
-      await pool.query(`SELECT R.id as reviewid ,A.id as articleid, A.title
-          FROM "article" AS A
-          JOIN "review" AS R
-          ON A.id = R.creatorid
-          WHERE R.creatorid = $1
-          ORDER BY reviewid
-          DESC`,
+      await pool.query(`SELECT R.id as reviewid, A.id as articleid, A.title
+        FROM "article" AS A
+        JOIN "review" AS R
+        ON A.id = R.creatorid
+        WHERE R.creatorid = $1
+        ORDER BY reviewid
+        DESC`,
         [userId]
       );
 
