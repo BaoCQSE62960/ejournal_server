@@ -1,9 +1,25 @@
 const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
-const { authJwt } = require("../middleware");
+// const { authJwt } = require("../middleware");
+const sob = require('../staticObj');
+
+async function checkRoleAdmin(req, res, next) {
+  try {
+    if (req.session.user.role == sob.ADMIN) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
 //GET Major list
-router.get('/',authJwt.isAdmin, async (req, res) => {
+// router.get('/',authJwt.isAdmin, async (req, res) => {
+router.get('/', checkRoleAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT id, name, status
@@ -20,15 +36,18 @@ router.get('/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Add major
-router.put('/add/',authJwt.isAdmin, async (req, res) => {
+router.put('/add/', checkRoleAdmin, async (req, res) => {
   try {
     const { name } = req.body;
     const newMajor =
       await pool.query(`
-      INSERT INTO "major"(name,status) 
-      VALUES($1,'ACTIVE') 
+      INSERT INTO "major"(name, status) 
+      VALUES($1, $2) 
       RETURNING id, name, status;`,
-        [name]
+        [
+          name,
+          sob.ACTIVE
+        ]
       );
     res.status(200).json(newMajor.rows);
   } catch (error) {
@@ -38,7 +57,7 @@ router.put('/add/',authJwt.isAdmin, async (req, res) => {
 });
 
 //View major
-router.get('/info/',authJwt.isAdmin, async (req, res) => {
+router.get('/info/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const list =
@@ -58,7 +77,7 @@ router.get('/info/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Update major
-router.put('/update/',authJwt.isAdmin, async (req, res) => {
+router.put('/update/', checkRoleAdmin, async (req, res) => {
   try {
     const { id, name } = req.body;
     const updateMajor = await pool.query(
@@ -78,12 +97,15 @@ router.put('/update/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Deactive major
-router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
+router.put('/deactive/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const deactiveMajor = await pool.query(
-      `UPDATE "major" SET status = 'INACTIVE' WHERE id = $1`,
-      [id]
+      `UPDATE "major" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.INACTIVE
+      ]
     );
     res.status(200).json();
   } catch (error) {
@@ -93,12 +115,15 @@ router.put('/deactive/',authJwt.isAdmin, async (req, res) => {
 });
 
 //Active major
-router.put('/active/',authJwt.isAdmin, async (req, res) => {
+router.put('/active/', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.body;
     const activeMajor = await pool.query(
-      `UPDATE "major" SET status = 'ACTIVE' WHERE id = $1`,
-      [id]
+      `UPDATE "major" SET status = $2 WHERE id = $1`,
+      [
+        id,
+        sob.ACTIVE
+      ]
     );
     res.status(200).json();
   } catch (error) {
