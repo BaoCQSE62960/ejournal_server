@@ -23,12 +23,12 @@ async function checkCorresponding(req, res, next) {
       FROM "articleauthor" AS A
       JOIN "account" AS U
       ON U.id = A.accountid 
-      WHERE A.accountid = $2 
-      AND A.iscorresponding = $3 
+      WHERE A.accountid = $1 
+      AND A.iscorresponding = $2 
       LIMIT 1`,
       [
         req.session.user.id,
-        true,
+        true
       ]
     );
     if (correspondingAuthor.rows[0]) {
@@ -50,7 +50,7 @@ router.get('/article/', checkRoleAuthor, async (req, res) => {
       await pool.query(`SELECT J.id, J.title, M.name as majorname
         FROM "article" AS J 
         JOIN "articleauthor" AS A
-        ON J.articleid = A.articleid
+        ON J.id = A.articleid
         JOIN "major" AS M
         ON J.majorid = M.id
         WHERE J.status = $1 
@@ -81,15 +81,14 @@ router.get('/manuscript/', checkCorresponding, async (req, res) => {
       await pool.query(`SELECT J.id, J.title, M.name as majorname
           FROM "article" AS J 
           JOIN "articleauthor" AS A
-          ON J.articleid = A.articleid
+          ON J.id = A.articleid
           JOIN "major" AS M
           ON J.majorid = M.id
-          WHERE J.status != $1 
-          AND A.accountid = $2
+          WHERE J.status != 'ACCEPTED' 
+          AND A.accountid = $1
           ORDER BY id
           DESC;`,
         [
-          sob.ACCEPTED,
           req.session.user.id
         ]
       );

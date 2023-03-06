@@ -13,7 +13,7 @@ async function checkRoleSubmit(req, res, next) {
         `UPDATE "account" SET roleid = $2 WHERE id = $1`,
         [
           req.session.user.id,
-          sob.AUTHOR_ID,
+          sob.AUTHOR_ID
         ]
       );
       next();
@@ -56,7 +56,7 @@ async function checkCorresponding(req, res, next) {
       [
         id,
         req.session.user.id,
-        true,
+        true
       ]
     );
     if (correspondingAuthor.rows[0]) {
@@ -112,7 +112,7 @@ router.get('/', async (req, res) => {
 
         author.push(
           _.merge(list.rows[i], {
-            author: authorList.rows,
+            author: authorList.rows
           })
         );
       }
@@ -152,7 +152,7 @@ router.get('/info/', async (req, res) => {
 
         author.push(
           _.merge(selectedArticle.rows[i], {
-            author: authorList.rows,
+            author: authorList.rows
           })
         );
       }
@@ -168,16 +168,16 @@ router.get('/info/', async (req, res) => {
 });
 
 //Submit article (author)
-//inprocess
 //DONE Nếu user là member, thay đổi role của user thành author
 //DONE Nếu user là author thì chỉ submit article
-//* danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
-/* Nếu author có tài khoản trong danh sách account thì khi điển đúng
+//* FE danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
+/*DONE Nếu author có tài khoản trong danh sách account thì khi điển đúng
 email và fullname, hệ thống sẽ tự động thêm accountId tương ứng */
 router.post(
   '/submit/', checkRoleSubmit, async (req, res) => {
     try {
       const { title, summary, content, openaccess, majorid, authorlist } = req.body;
+      var author = [];
 
       var newManuscript =
         await pool.query(`INSERT INTO "article"(title,summary,content,openaccess,creatorid,creationtime,status,majorid) 
@@ -189,7 +189,7 @@ router.post(
             openaccess,
             req.session.user.id,
             sob.WAITING,
-            majorid,
+            majorid
           ]
         );
 
@@ -201,31 +201,49 @@ router.post(
           AND email = $2`,
           [
             authorlist[x].fullname,
-            authorlist[x].email,
+            authorlist[x].email
           ]
         );
 
-        for (var i = 0; i < authorItem.length; i++) {
-          var detailAccountAuthor = await pool.query(
-            `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
+        if (authorItem.rows[0]) {
+
+          for (var i = 0; i < authorItem.rows.length; i++) {
+            var detailAccountAuthor = await pool.query(
+              `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
+              [
+                newManuscript.rows[0].id,
+                authorItem.rows[i].id,
+                authorItem.rows[i].fullname,
+                authorItem.rows[i].email,
+                authorlist[x].iscorresponding
+              ]
+            );
+
+            author.push(
+              _.merge(authorItem.rows[i], {
+                author: detailAccountAuthor.rows
+              })
+            );
+          }
+
+        } else {
+
+          var detailFreeAuthor = await pool.query(
+            `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
             [
               newManuscript.rows[0].id,
-              authorItem.rows[i].id,
-              authorItem.rows[i].fullname,
-              authorItem.rows[i].email,
-              authorlist[x].iscorresponding,
+              authorlist[x].fullname,
+              authorlist[x].email,
+              authorlist[x].iscorresponding
             ]
           );
+
+          author.push(
+            _.merge(authorItem.rows[i], {
+              author: detailFreeAuthor.rows
+            })
+          );
         }
-        var detailFreeAuthor = await pool.query(
-          `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
-          [
-            newManuscript.rows[0].id,
-            authorlist[x].fullname,
-            authorlist[x].email,
-            authorlist[x].iscorresponding,
-          ]
-        );
       }
       res.status(200).json();
     } catch (error) {
@@ -235,16 +253,19 @@ router.post(
   });
 
 //Edit manuscript (author)
-/* chỉ cho phép chỉnh sửa bản thảo khi status là REVISE hoặc
-khi trạng thái là WAITING và chưa được assign reviewer */
-//* danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
+//DONE chỉ cho phép chỉnh sửa bản thảo khi status là REVISE hoặc khi trạng thái là WAITING
+//FE danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
 //DONE chỉ có corresponding author được quyền chỉnh sửa
+/*DONE Nếu author có tài khoản trong danh sách account thì khi điển đúng
+email và fullname, hệ thống sẽ tự động thêm accountId tương ứng */
 router.put('/manuscript/update/',
   checkRoleAuthor,
   checkCorresponding,
   checkArticleStatus,
   async (req, res) => {
     try {
+      var author = [];
+
       var selectedManuscript = await pool.query(
         `UPDATE "article" 
         SET title = $2, 
@@ -261,7 +282,7 @@ router.put('/manuscript/update/',
           req.body.content,
           req.body.openaccess,
           req.body.majorid,
-          sob.WAITING,
+          sob.WAITING
         ]
       );
 
@@ -271,22 +292,64 @@ router.put('/manuscript/update/',
           WHERE articleId = $1 AND iscorresponding = $2`,
           [
             req.body.id,
-            false,
+            false
           ]
         );
       }
 
       for (var x = 0; x < req.body.authorlist.length; x++) {
-        var detailAuthor = await pool.query(
-          `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
+        var authorItem = await pool.query(
+          `SELECT id, fullname, email
+          FROM "account" 
+          WHERE fullname = $1 
+          AND email = $2`,
           [
-            req.body.id,
             req.body.authorlist[x].fullname,
-            req.body.authorlist[x].email,
-            false,
+            req.body.authorlist[x].email
           ]
         );
+
+        if (authorItem.rows[0]) {
+
+          for (var i = 0; i < authorItem.rows.length; i++) {
+            var detailAccountAuthor = await pool.query(
+              `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
+              [
+                req.body.id,
+                authorItem.rows[i].id,
+                authorItem.rows[i].fullname,
+                authorItem.rows[i].email,
+                false
+              ]
+            );
+
+            author.push(
+              _.merge(authorItem.rows[i], {
+                author: detailAccountAuthor.rows
+              })
+            );
+          }
+
+        } else {
+
+          var detailFreeAuthor = await pool.query(
+            `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
+            [
+              req.body.id,
+              req.body.authorlist[x].fullname,
+              req.body.authorlist[x].email,
+              false
+            ]
+          );
+
+          author.push(
+            _.merge(authorItem.rows[i], {
+              author: detailFreeAuthor.rows
+            })
+          );
+        }
       }
+
       res.status(200).json();
     } catch (error) {
       console.log(error);
@@ -346,7 +409,7 @@ router.get('/manuscript/info/', async (req, res) => {
 
         author.push(
           _.merge(selectedManuscript.rows[i], {
-            author: authorList.rows,
+            author: authorList.rows
           })
         );
       }
@@ -392,7 +455,7 @@ router.get('/public/', async (req, res) => {
         );
         author.push(
           _.merge(list.rows[i], {
-            author: authorList.rows,
+            author: authorList.rows
           })
         );
       }
