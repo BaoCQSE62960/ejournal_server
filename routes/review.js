@@ -79,13 +79,16 @@ router.get('/pending/', checkRoleReviewer, async (req, res) => {
 
     const list =
       await pool.query(`SELECT A.id, A.title, M.name as majorname
-        FROM "article" AS A, 
+        FROM "article" AS A
         JOIN "review" AS R ON A.id = R.articleid 
         JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.status = 'PENDING' AND R.accountid = $1
+        WHERE A.status = $1 AND R.accountid = $2
         ORDER BY id
         DESC`,
-        [reviewerid]
+        [
+          sob.PENDING,
+          reviewerid
+        ]
       );
 
     res.status(200).json({ list: list.rows });
