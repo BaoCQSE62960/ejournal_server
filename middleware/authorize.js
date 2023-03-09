@@ -1,6 +1,6 @@
 const { Router } = require('express');
-const { authJwt } = require("../middleware");
-const controller = require("../controllers/accountControlle");
+const { authJwt } = require(".");
+const controller = require("../controllers/accountController");
 const router = Router();
 
 async function headerCross(req, res, next) {
