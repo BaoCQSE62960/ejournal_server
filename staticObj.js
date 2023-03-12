@@ -26,6 +26,7 @@ class sob {
   static ONLINE = 'ONLINE';
   static OFFLINE = 'OFFLINE';
   static EMPTY = 'EMPTY';
+  static MAIL_SERVICE = 'gmail';
   static TRANSPORT_EMAIL = 'kungfuharuka@gmail.com';
   static TRANSPORT_PASS = 'aajoivgytvybfwxe';
   static ACCEPT_MAIL_TITLE = 'Bài báo đã được duyệt';
