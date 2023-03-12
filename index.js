@@ -9,7 +9,7 @@ const server = require('http').createServer(app);
 // route
 const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
-const authorizeRoute = require('./routes/authorize');
+const authorizeRoute = require('./middleware/authorize');
 
 const adminRoute = require('./routes/admin');
 const authorRoute = require('./routes/author');

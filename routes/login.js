@@ -42,7 +42,7 @@ async function validateUser(req, res, next) {
 }
 
 var transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: sob.MAIL_SERVICE,
   auth: {
     user: sob.TRANSPORT_EMAIL,
     pass: sob.TRANSPORT_PASS

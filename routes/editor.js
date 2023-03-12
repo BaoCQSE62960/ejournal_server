@@ -6,7 +6,7 @@ const _ = require('lodash');
 const sob = require('../staticObj');
 
 var transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: sob.MAIL_SERVICE,
     auth: {
         user: sob.TRANSPORT_EMAIL,
         pass: sob.TRANSPORT_PASS
