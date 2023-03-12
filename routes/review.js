@@ -72,6 +72,21 @@ router.post('/assign/', checkRoleEditor, async (req, res) => {
   }
 });
 
+//GET reviewer list
+router.get('/listreviewers/', checkRoleEditor, async (req, res) => {
+  try {
+    const list =
+      await pool.query(`SELECT * 
+      FROM account 
+      WHERE roleid = 4`
+      );
+    res.status(200).json({ list: list.rows });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
 //GET Pending article list (reviewer)
 router.get('/pending/', checkRoleReviewer, async (req, res) => {
   try {
