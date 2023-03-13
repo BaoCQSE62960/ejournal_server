@@ -26,6 +26,89 @@ async function checkRoleSubmit(req, res, next) {
   }
 }
 
+//* Nếu bài viết có openaccess = true, tất cả role đều xem được
+async function checkOpenAccess(req, res, next) {
+  try {
+    const { id } = req.body;
+    const openAccess = await pool.query(
+      `SELECT id, openaccess
+      FROM "article" 
+      WHERE A.id = $1 
+      LIMIT 1`,
+      [id]
+    );
+    if (openAccess.rows[0]) {
+      req.session.openAccess = true;
+      next();
+    } else {
+      req.session.openAccess = false;
+      next();
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
+//* User thuộc trường đại học đã trả phí và còn thời hạn
+//* User cá nhân đã trả phí để xem 1 bài báo xác định
+//* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
+//* Reviewer chỉ được xem nội dung bài báo mình đang review
+async function checkAccountAccess(req, res, next) {
+  try {
+    const { id } = req.body;
+    const access = await pool.query(
+      `SELECT id, email, accesstype
+      FROM "account" 
+      WHERE id = $1 
+      LIMIT 1`,
+      [req.session.user.id]
+    );
+
+    if (access.rows[0]) {
+      if (access.rows[0].accesstype == sob.STUDENT) {
+        const mailType = access.rows[0].email.split('@')[1];
+
+        const universityTran =
+          await pool.query(`SELECT U.id, U.mailtype, UT.expirationdate AS expirationdate, UT.isexpired AS isexpired
+            FROM "university" AS U
+            JOIN "universitytransaction" AS UT ON UT.universityid = U.id 
+            WHERE mailtype = $1`,
+            [mailType]
+          );
+
+        if (universityTran.rows[0]) {
+          req.session.universityTran = universityTran.rows[0];
+        } else {
+          req.session.universityTran = null;
+        }
+
+      } else if (access.rows[0].accesstype == sob.PERSONAL) {
+        const personalTran =
+          await pool.query(`SELECT * FROM  "personaltransaction" WHERE articleid = $1 AND accountid = $2`,
+            [
+              id,
+              req.session.user.id
+            ]
+          );
+
+        if (personalTran.rows[0]) {
+          req.session.personalTran = personalTran.rows[0];
+        } else {
+          req.session.personalTran = null;
+        }
+      }
+
+      next();
+    } else {
+      res.status(400).json({ msg: `Không tìm thấy thông tin access` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
 async function checkRoleAuthor(req, res, next) {
   try {
     if (req.session.user.role == sob.AUTHOR) {
@@ -43,7 +126,7 @@ async function checkCorresponding(req, res, next) {
   try {
     const { id, title, summary, content, openaccess, majorid, authorlist } = req.body;
     const correspondingAuthor = await pool.query(
-      `SELECT AA.id, AA.articleid, AA.accountid , A.fullname AS fullname, A.email AS email, M.status AS status, AA.iscorresponding
+      `SELECT AA.id, AA.articleid, AA.accountid, A.fullname AS fullname, A.email AS email, M.status AS status, AA.iscorresponding
       FROM "articleauthor" AS AA 
       JOIN "account" AS A 
       ON A.id = AA.accountid 
@@ -89,7 +172,7 @@ async function checkArticleStatus(req, res, next) {
 router.get('/', async (req, res) => {
   try {
     const list =
-      await pool.query(`SELECT A.id, A.title, M.name as majorname
+      await pool.query(`SELECT A.id, A.title, M.name as majorname, A.openaccess
         FROM "article" AS A 
         JOIN "major" AS M
         ON A.majorid = M.id
@@ -161,6 +244,23 @@ router.get('/info/', async (req, res) => {
       res.status(400).json({ msg: 'Không tìm thấy thông tin' });
     }
 
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
+//GET Major list for submit
+router.get('/submit/major', checkRoleSubmit, async (req, res) => {
+  try {
+    const list =
+      await pool.query(`SELECT id, name
+        FROM "major"
+        ORDER BY id
+        DESC
+        ;`
+      );
+    res.status(200).json({ list: list.rows });
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
