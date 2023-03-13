@@ -50,9 +50,12 @@ router.post('/assign/', checkRoleEditor, async (req, res) => {
 
     const statusArticle =
       await pool.query(`UPDATE "article" 
-        SET status = 'PENDING' 
+        SET status = $2 
         WHERE id = $1`,
-        [articleid]
+        [
+          articleid,
+          sob.PENDING
+        ]
       );
 
     var createReview =
@@ -72,13 +75,29 @@ router.post('/assign/', checkRoleEditor, async (req, res) => {
   }
 });
 
+//GET reviewer list
+router.get('/listreviewers/', checkRoleEditor, async (req, res) => {
+  try {
+    const list =
+      await pool.query(`SELECT id, fullname, avatar, gender, email, phone
+        FROM account 
+        WHERE roleid = $1`,
+        [sob.REVIEWER_ID]
+      );
+    res.status(200).json({ list: list.rows });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
 //GET Pending article list (reviewer)
 router.get('/pending/', checkRoleReviewer, async (req, res) => {
   try {
     const reviewerid = req.session.user.id;
 
     const list =
-      await pool.query(`SELECT A.id, A.title, M.name as majorname
+      await pool.query(`SELECT A.id, A.title, M.name as majorname, A.status
         FROM "article" AS A
         JOIN "review" AS R ON A.id = R.articleid 
         JOIN "major" AS M ON A.majorid = M.id 
@@ -123,7 +142,7 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
     var submitReview =
       await pool.query(`UPDATE "review" 
         SET content = $3, 
-        suggest = $4 
+        suggest = $4
         WHERE articleid = $1 
         AND accountid = $2`,
         [
@@ -131,6 +150,16 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
           req.session.user.id,
           content,
           suggest
+        ]
+      );
+
+    var statusArticle =
+      await pool.query(`UPDATE "article" 
+        SET status = $2 
+        WHERE id = $1`,
+        [
+          articleid,
+          sob.REVIEWED
         ]
       );
 
