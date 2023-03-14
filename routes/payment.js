@@ -1,6 +1,20 @@
 const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
+const sob = require('../staticObj');
+
+async function checkRoleAdmin(req, res, next) {
+  try {
+    if (req.session.user.role == sob.ADMIN) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
 
 //Submit personal payment
 router.post('/submitpersonal/', async (req, res) => {
@@ -36,7 +50,7 @@ router.post('/submituniversity/', async (req, res) => {
 
     var paymentinfo =
       await pool.query(`INSERT INTO "universitytransaction"(universityid, amount, expirationdate, isexpired) 
-          VALUES($1,$2,CURRENT_TIMESTAMP + $3,$4)`,
+          VALUES($1,$2,CURRENT_TIMESTAMP::DATE + $3::integer,$4)`,
         [
           universityid,
           amount,
@@ -64,7 +78,7 @@ router.put('/updateuniversity/', async (req, res) => {
     var paymentinfo =
       await pool.query(`UPDATE "universitytransaction" 
           SET amount = $1,
-          expirationdate = CURRENT_TIMESTAMP + $2,
+          expirationdate = CURRENT_TIMESTAMP::DATE + $2::integer,
           isexpired = $3
           WHERE id = $4`,
         [
@@ -82,7 +96,7 @@ router.put('/updateuniversity/', async (req, res) => {
 });
 
 //Get list payment of current account
-router.get('/personalpayment/', async (req, res) => {
+router.get('/personalpayment/', checkRoleAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT *
@@ -99,7 +113,7 @@ router.get('/personalpayment/', async (req, res) => {
 });
 
 //Get list payment of the university
-router.get('/universitypayment/', async (req, res) => {
+router.get('/universitypayment/', checkRoleAdmin, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT *
@@ -116,7 +130,7 @@ router.get('/universitypayment/', async (req, res) => {
 });
 
 //Get personal payment detail
-router.get('/personalpayment/:id', async (req, res) => {
+router.get('/personalpayment/:id', checkRoleAdmin, async (req, res) => {
   try {
     // const accountid = req.session.user.id;
     const { id } = req.params;
@@ -136,7 +150,7 @@ router.get('/personalpayment/:id', async (req, res) => {
 });
 
 //Get university payment detail
-router.get('/universitypayment/:id', async (req, res) => {
+router.get('/universitypayment/:id', checkRoleAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const paymentinfo =
