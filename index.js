@@ -5,9 +5,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 var cors = require("cors");
 const server = require('http').createServer(app);
+
 // route
 const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
+const authorizeRoute = require('./middleware/authorize');
 
 const adminRoute = require('./routes/admin');
 const authorizeRoute = require('./routes/authorize');
@@ -40,7 +42,7 @@ const knex = Knex({
   connection: {
     host: '127.0.0.1',
     user: 'postgres',
-    password: '54321',
+    password: '123',
     database: 'ejournal',
   },
 });
@@ -85,7 +87,6 @@ app.use('/pdf', pdfRoute);
 app.use('/admin', adminRoute);
 app.use('/authorize', authorizeRoute);
 
-
 app.use('/editor', editorRoute);
 app.use('/author', authorRoute)
 app.use('/account', accountRoute);
@@ -102,7 +103,7 @@ server.listen(PORT, () => {
 
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('ejournal', 'postgres', '54321', {
+const sequelize = new Sequelize('ejournal', 'postgres', '123', {
   host: 'localhost',
   dialect: "postgres",
 });
