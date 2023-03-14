@@ -11,9 +11,9 @@ const logoutRoute = require('./routes/logout');
 
 const adminRoute = require('./routes/admin');
 const authorizeRoute = require('./routes/authorize');
-const editorRoute = require('./routes/editor');
-
-const accountRoute = require('./routes/account');
+const editorRoute = require('./routes/editor.js');
+const authorRoute = require('./routes/author');
+const accountRoute = require('./routes/author');
 const majorRoute = require('./routes/major');
 const universityRoute = require('./routes/university');
 
@@ -22,7 +22,7 @@ const articleRoute = require('./routes/article');
 const reviewRoute = require('./routes/review');
 const paymentRoute = require('./routes/payment');
 
-
+const pdfRoute = require('./routes/pdf');
 
 //other
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
@@ -81,13 +81,13 @@ async function checkUserSession(req, res, next) {
   }
 }
 app.use(checkUserSession);
-
+app.use('/pdf', pdfRoute);
 app.use('/admin', adminRoute);
 app.use('/authorize', authorizeRoute);
 
- //require('./routes/author.js')(app);
-//  require('./routes/auth.js')(app);
+
 app.use('/editor', editorRoute);
+app.use('/author', authorRoute)
 app.use('/account', accountRoute);
 app.use('/major', majorRoute);
 app.use('/university', universityRoute);

@@ -3,7 +3,7 @@ const router = Router();
 const pool = require('../db');
 const _ = require('lodash');
 const sob = require('../staticObj');
-const { authJwt } = require("../middleware"); 
+
 
 
 async function checkRoleAuthor(req, res, next) {
@@ -22,24 +22,16 @@ async function checkRoleAuthor(req, res, next) {
 
 // get my manuscript (author)
 
-router.get('my-manuscript/', checkRoleAuthor,  async (req, res) => {
+router.get('/myManuscript/', checkRoleAuthor,  async (req, res) => {
     try {
-        const {roleid} = req.session.user.roleid;
-        const {articleid} = req.body;
         const {accountid} = req.session.user.id;
-        const list = await pool.query(`SELECT A.name, R.name, J.id, J.title 
+        const list = await pool.query(`SELECT A.username, C.title 
         FROM "account" AS A
-        JOIN "role" AS R ON A.roleid = R.id, 
-        "article" AS J 
-        JOIN "articleauthor" as AA ON J.id = AA.articleid,
-        "account" AS A 
-        JOIN "articleauthor" as AA ON A.id = AA.accountid
-        WHERE R.id = $1 AND J.id = $2 AND A.id = accountid
-        ORDER BY id
-        DESC`,
+        JOIN "articleauthor" as T 
+		ON A.id = T.accountid
+		JOIN "article" AS C ON C.id = T.articleid
+		WHERE T.accountid = $1;`,
         [
-            roleid,
-            articleid,
             accountid
         ]
         );
@@ -56,6 +48,7 @@ router.get('my-manuscript/', checkRoleAuthor,  async (req, res) => {
     }
 });
 
+module.exports = router;
 
 
 
