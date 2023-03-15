@@ -485,11 +485,11 @@ router.get("/manuscript/info-file/", async (req, res) => {
 //* User cá nhân đã trả phí để xem 1 bài báo xác định
 //* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
 //* Reviewer chỉ được xem nội dung bài báo mình đang review
-router.get("/public/", async (req, res) => {
+router.get("/public-file/", async (req, res) => {
   try {
     const { id } = req.body;
     const list = await pool.query(
-      `SELECT A.id, M.name as major, A.title, A.content, A.openaccess, A.status
+      `SELECT A.id, M.name as major, A.title, A.content, A.doc, A.openaccess, A.status
         FROM "article" AS A
         JOIN "major" AS M ON A.majorid = M.id 
         WHERE A.id = $1
