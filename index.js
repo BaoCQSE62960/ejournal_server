@@ -9,10 +9,10 @@ const server = require('http').createServer(app);
 // route
 const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
-const authorizeRoute = require('./middleware/authorize');
+
 
 const adminRoute = require('./routes/admin');
-const authorizeRoute = require('./routes/authorize');
+
 const editorRoute = require('./routes/editor.js');
 const authorRoute = require('./routes/author');
 const accountRoute = require('./routes/author');
@@ -40,9 +40,9 @@ const Knex = require('knex');
 const knex = Knex({
   client: 'pg',
   connection: {
-    host: '127.0.0.1',
+    host: 'localhost',
     user: 'postgres',
-    password: '123',
+    password: '54321',
     database: 'ejournal',
   },
 });
@@ -85,7 +85,7 @@ async function checkUserSession(req, res, next) {
 app.use(checkUserSession);
 app.use('/pdf', pdfRoute);
 app.use('/admin', adminRoute);
-app.use('/authorize', authorizeRoute);
+
 
 app.use('/editor', editorRoute);
 app.use('/author', authorRoute)
