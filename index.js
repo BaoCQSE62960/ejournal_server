@@ -9,7 +9,7 @@ const server = require('http').createServer(app);
 // route
 const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
-const authorizeRoute = require('./middleware/authorize');
+// const authorizeRoute = require('./middleware/authorize');
 
 const adminRoute = require('./routes/admin');
 const authorRoute = require('./routes/author');
@@ -23,6 +23,7 @@ const profileRoute = require('./routes/profile');
 const articleRoute = require('./routes/article');
 const reviewRoute = require('./routes/review');
 const paymentRoute = require('./routes/payment');
+const pdfRoute = require('./routes/pdf');
 
 //other
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
@@ -82,11 +83,9 @@ async function checkUserSession(req, res, next) {
 }
 app.use(checkUserSession);
 
+app.use('/pdf', pdfRoute);
 app.use('/admin', adminRoute);
-app.use('/authorize', authorizeRoute);
-
-//require('./routes/author.js')(app);
-//require('./routes/auth.js')(app);
+// app.use('/authorize', authorizeRoute);
 app.use('/author', authorRoute);
 app.use('/editor', editorRoute);
 app.use('/account', accountRoute);

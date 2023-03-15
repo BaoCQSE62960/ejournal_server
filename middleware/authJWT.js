@@ -88,17 +88,18 @@ isAdmin = async (req, res, next) => {
     `SELECT R.name As role
           FROM "account" AS A JOIN "role" AS R ON A.roleid = R.id
           WHERE A.username = $1 LIMIT 1`, [username]
-  );
-  const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
-
-  if (role && role === "ADMIN") {
-    next();
-  }
-
-  else {
-    res.status(401).send("Access denied");
-  }
-}
+        );
+        const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
+        
+        if(role && role === "ADMIN"){
+          next();
+        } 
+        
+        
+        else {
+          res.status(401).send("Vai trò của người dùng không phù hợp");
+        }
+      }
 
 
 isMember = async (req, res, next) => {
@@ -107,17 +108,18 @@ isMember = async (req, res, next) => {
     `SELECT R.name As role
           FROM "account" AS A JOIN "role" AS R ON A.roleid = R.id
           WHERE A.username = $1 LIMIT 1`, [username]
-  );
-  const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
-
-  if (role && role === "MEMBER") {
-    next();
-  }
-
-  else {
-    res.status(401).send("Access denied");
-  }
-}
+        );
+        const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
+        
+        if(role && role === "MEMBER"){
+          next();
+        } 
+        
+        
+        else {
+          res.status(401).send("Vai trò của người dùng không phù hợp");
+        }
+      }
 
 
 isAuthor = async (req, res, next) => {
@@ -126,8 +128,17 @@ isAuthor = async (req, res, next) => {
     `SELECT R.name As role
           FROM "account" AS A JOIN "role" AS R ON A.roleid = R.id
           WHERE A.username = $1 LIMIT 1`, [username]
-  );
-  const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
+        );
+        const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
+        
+        if(role && role === "AUTHOR"){
+          next();
+        } 
+        
+        
+        else {
+          res.status(401).send("vai trò người dùng không phù hợp");
+        }
 
   if (role && role === "AUTHOR") {
     next();
@@ -147,17 +158,18 @@ isReviewer = async (req, res, next) => {
     `SELECT R.name As role
           FROM "account" AS A JOIN "role" AS R ON A.roleid = R.id
           WHERE A.username = $1 LIMIT 1`, [username]
-  );
-  const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
-
-  if (role && role === "REVIEWER") {
-    next();
-  }
-
-  else {
-    res.status(401).send("Access denied role reviewer");
-  }
-}
+        );
+        const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
+        
+        if(role && role === "REVIEWER"){
+          next();
+        } 
+        
+        
+        else {
+          res.status(401).send("Vai trò của người dùng không phù hợp");
+        }
+      }
 
 
 
@@ -167,17 +179,18 @@ isEditor = async (req, res, next) => {
     `SELECT R.name As role
           FROM "account" AS A JOIN "role" AS R ON A.roleid = R.id
           WHERE A.username = $1 LIMIT 1`, [username]
-  );
-  const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
-
-  if (role && role === "EDITOR") {
-    next();
-  }
-
-  else {
-    res.status(401).send("Access denied");
-  }
-}
+        );
+        const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
+        
+        if(role && role === "EDITOR"){
+          next();
+        } 
+        
+        
+        else {
+          res.status(401).send("Vai trò của người dùng không phù hợp");
+        }
+      }
 
 
 isEditorInChief = async (req, res, next) => {
@@ -186,17 +199,18 @@ isEditorInChief = async (req, res, next) => {
     `SELECT R.name As role
           FROM "account" AS A JOIN "role" AS R ON A.roleid = R.id
           WHERE A.username = $1 LIMIT 1`, [username]
-  );
-  const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
-
-  if (role && role === "EDITOR_IN_CHEIF") {
-    next();
-  }
-
-  else {
-    res.status(401).send("Access denied");
-  }
-}
+        );
+        const role = result.rows[0]?.role; // use optional chaining to avoid null/undefined errors
+        
+        if(role && role === "EDITOR_IN_CHEIF"){
+          next();
+        } 
+        
+        
+        else {
+          res.status(401).send("Vai trò của người dùng không phù hợp");
+        }
+      }
 
 
 

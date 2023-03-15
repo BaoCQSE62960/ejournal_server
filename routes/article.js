@@ -1,8 +1,10 @@
-const { Router } = require('express');
+const { Router } = require("express");
 const router = Router();
-const pool = require('../db');
-const _ = require('lodash');
-const sob = require('../staticObj');
+const pool = require("../db");
+const _ = require("lodash");
+const sob = require("../staticObj");
+const multer = require("multer"); // for file
+const upload = multer();
 
 async function checkRoleSubmit(req, res, next) {
   try {
@@ -105,51 +107,6 @@ async function checkAccountAccess(req, res, next) {
       next();
     } else {
       res.status(400).json({ msg: `Không tìm thấy thông tin access` });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống' });
-  }
-}
-
-//* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
-//* Reviewer chỉ được xem nội dung bài báo mình đang review
-async function checkRoleFulltext(req, res, next) {
-  try {
-    const { id } = req.body;
-    const author = await pool.query(
-      `SELECT id, articleid, accountid
-      FROM "articleauthor"
-      WHERE articleid = $1 
-      AND accountid = $2 
-      LIMIT 1`,
-      [
-        id,
-        req.session.user.id
-      ]
-    );
-
-    const review =
-      await pool.query(`SELECT A.id, A.title
-        FROM "article" AS A
-        JOIN "review" AS R ON A.id = R.articleid 
-        WHERE A.status = $1 AND R.accountid = $2
-        ORDER BY id
-        DESC`,
-        [
-          sob.PENDING,
-          req.session.user.id
-        ]
-      );
-
-    if ((req.session.user.role == sob.REVIEWER && review.rows[0])
-      || req.session.user.role == sob.EDITOR
-      || req.session.user.role == sob.CEDITOR
-      || req.session.user.role == sob.MEMBER
-      || author.rows[0]) {
-      next();
-    } else {
-      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
     }
   } catch (error) {
     console.log(error);
@@ -302,13 +259,12 @@ router.get('/info/', async (req, res) => {
 //GET Major list for submit
 router.get('/submit/major', checkRoleSubmit, async (req, res) => {
   try {
-    const list =
-      await pool.query(`SELECT id, name
-        FROM "major"
-        ORDER BY id
-        DESC
-        ;`
-      );
+    const list = await pool.query(`SELECT id, name
+      FROM "major"
+      ORDER BY id
+      DESC
+      ;`
+    );
     res.status(200).json({ list: list.rows });
   } catch (error) {
     console.log(error);
@@ -401,6 +357,87 @@ router.post(
     }
   });
 
+// this apis for file 
+router.post(
+  "/submit-file/",
+  checkRoleSubmit,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      const { summary, content, openaccess, majorid, authorlist } = req.body;
+      const { originalname, buffer } = req.file;
+      const title = originalname.replace(/\.[^/.]+$/, "");
+      const doc = req.file.buffer;
+      var author = [];
+
+      var newManuscript = await pool.query(
+        `INSERT INTO "article"(title,summary,content,doc,openaccess,creatorid,creationtime,status,majorid) 
+          VALUES($1,$2,$3,$4,$5,$6,CURRENT_TIMESTAMP,$7,$8) RETURNING id;`,
+        [
+          title,
+          summary,
+          content,
+          doc,
+          openaccess,
+          req.session.user.id,
+          sob.WAITING,
+          majorid,
+        ]
+      );
+
+      // for (var x = 0; x < authorlist.length; x++) {
+      //   var authorItem = await pool.query(
+      //     `SELECT id, fullname, email
+      //     FROM "account" 
+      //     WHERE fullname = $1 
+      //     AND email = $2`,
+      //     [authorlist[x].fullname, authorlist[x].email]
+      //   );
+
+      //   if (authorItem.rows[0]) {
+      //     for (var i = 0; i < authorItem.rows.length; i++) {
+      //       var detailAccountAuthor = await pool.query(
+      //         `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
+      //         [
+      //           newManuscript.rows[0].id,
+      //           authorItem.rows[i].id,
+      //           authorItem.rows[i].fullname,
+      //           authorItem.rows[i].email,
+      //           authorlist[x].iscorresponding,
+      //         ]
+      //       );
+
+      //       author.push(
+      //         _.merge(authorItem.rows[i], {
+      //           author: detailAccountAuthor.rows,
+      //         })
+      //       );
+      //     }
+      //   } else {
+      //     var detailFreeAuthor = await pool.query(
+      //       `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
+      //       [
+      //         newManuscript.rows[0].id,
+      //         authorlist[x].fullname,
+      //         authorlist[x].email,
+      //         authorlist[x].iscorresponding,
+      //       ]
+      //     );
+
+      //     author.push(
+      //       _.merge(authorItem.rows[i], {
+      //         author: detailFreeAuthor.rows,
+      //       })
+      //     );
+      //   }
+      // }
+      res.status(200).json();
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({ msg: "Lỗi hệ thống!" });
+    }
+  }
+);
 //Edit manuscript (author)
 //DONE chỉ cho phép chỉnh sửa bản thảo khi status là REVISE hoặc khi trạng thái là WAITING
 //FE danh sách tác giả bắt buộc phải có 1 corresponding author chịu trách nhiệm chính
@@ -550,6 +587,45 @@ router.delete('/manuscript/delete/',
   });
 
 //View manuscript details (author, reviewer, editor)
+router.get("/manuscript/info-file/", async (req, res) => {
+  try {
+    const { id } = req.body;
+    var selectedManuscript = await pool.query(
+      `SELECT A.id, M.name as major, A.title, A.summary, A.content, A.doc, A.openaccess, A.status
+        FROM "article" AS A
+        JOIN "major" AS M ON A.majorid = M.id 
+        WHERE A.id = $1
+        LIMIT 1
+        ;`,
+      [id]
+    );
+    if (selectedManuscript.rows[0]) {
+      var author = [];
+      for (var i = 0; i < selectedManuscript.rows.length; i++) {
+        var authorList = await pool.query(
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
+          [id]
+        );
+
+        author.push(
+          _.merge(selectedManuscript.rows[i], {
+            author: authorList.rows,
+          })
+        );
+      }
+      res.status(200).json({ article: selectedManuscript.rows });
+    } else {
+      res.status(400).json({ msg: "Không tìm thấy thông tin" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: "Lỗi hệ thống!" });
+  }
+});
+
+//View manuscript details (author, reviewer, editor)
 router.get('/manuscript/info/', async (req, res) => {
   try {
     const { id } = req.body;
@@ -588,6 +664,50 @@ router.get('/manuscript/info/', async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
+//Full text article
+//* Nếu bài viết có openaccess = true, tất cả role đều xem được
+//* User thuộc trường đại học đã trả phí và còn thời hạn
+//* User cá nhân đã trả phí để xem 1 bài báo xác định
+//* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
+//* Reviewer chỉ được xem nội dung bài báo mình đang review
+router.get("/public-file/", async (req, res) => {
+  try {
+    const { id } = req.body;
+    const list = await pool.query(
+      `SELECT A.id, M.name as major, A.title, A.content, A.doc, A.openaccess, A.status
+      FROM "article" AS A
+      JOIN "major" AS M ON A.majorid = M.id 
+      WHERE A.id = $1
+      LIMIT 1
+      ;`,
+      [id]
+    );
+    if (list.rows[0]) {
+      var author = [];
+
+      for (var i = 0; i < list.rows.length; i++) {
+        var authorList = await pool.query(
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
+          [id]
+        );
+        author.push(
+          _.merge(list.rows[i], {
+            author: authorList.rows,
+          })
+        );
+      }
+      res.status(200).json(list.rows);
+    } else {
+      res.status(400).json({ msg: "Không tìm thấy thông tin" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: "Lỗi hệ thống!" });
   }
 });
 

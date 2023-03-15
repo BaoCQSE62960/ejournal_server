@@ -88,9 +88,7 @@ router.get('/manuscript/', checkCorresponding, async (req, res) => {
           AND A.accountid = $1
           ORDER BY id
           DESC;`,
-        [
-          req.session.user.id
-        ]
+          [req.session.user.id]
       );
     if (list.rows[0]) {
       res.status(200).json({ list: list.rows });
