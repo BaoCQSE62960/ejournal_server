@@ -9,13 +9,13 @@ const server = require('http').createServer(app);
 // route
 const loginRoute = require('./routes/login');
 const logoutRoute = require('./routes/logout');
-
+// const authorizeRoute = require('./middleware/authorize');
 
 const adminRoute = require('./routes/admin');
-
-const editorRoute = require('./routes/editor.js');
 const authorRoute = require('./routes/author');
-const accountRoute = require('./routes/author');
+const editorRoute = require('./routes/editor');
+
+const accountRoute = require('./routes/account');
 const majorRoute = require('./routes/major');
 const universityRoute = require('./routes/university');
 
@@ -23,7 +23,6 @@ const profileRoute = require('./routes/profile');
 const articleRoute = require('./routes/article');
 const reviewRoute = require('./routes/review');
 const paymentRoute = require('./routes/payment');
-
 const pdfRoute = require('./routes/pdf');
 
 //other
@@ -40,9 +39,9 @@ const Knex = require('knex');
 const knex = Knex({
   client: 'pg',
   connection: {
-    host: 'localhost',
+    host: '127.0.0.1',
     user: 'postgres',
-    password: '54321',
+    password: '123',
     database: 'ejournal',
   },
 });
@@ -83,12 +82,12 @@ async function checkUserSession(req, res, next) {
   }
 }
 app.use(checkUserSession);
+
 app.use('/pdf', pdfRoute);
 app.use('/admin', adminRoute);
-
-
+// app.use('/authorize', authorizeRoute);
+app.use('/author', authorRoute);
 app.use('/editor', editorRoute);
-app.use('/author', authorRoute)
 app.use('/account', accountRoute);
 app.use('/major', majorRoute);
 app.use('/university', universityRoute);
