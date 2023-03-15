@@ -12,7 +12,7 @@ async function validateUser(req, res, next) {
   try {
     const { username, password } = req.body;
     const userInformation = await pool.query(
-      `SELECT A.id, A.username, A.password, A.fullname, A.email, A.avatar, R.name AS role 
+      `SELECT A.id, A.username, A.password, A.fullname, A.email, A.avatar, A.accesstype, R.name AS role 
       FROM "account" AS A 
       JOIN "role" AS R ON A.roleid = R.id 
       WHERE A.username = $1 LIMIT 1`,
@@ -78,7 +78,7 @@ router.post('/', validateUser,
       //Get user information
       if (req.session.user) {
         const updateUserStatus = await pool.query(
-          'Update "account" SET status = $2 WHERE id=$1',
+          'Update "account" SET status = $2 WHERE id = $1',
           [
             req.session.user.id,
             sob.ONLINE
@@ -92,6 +92,7 @@ router.post('/', validateUser,
           username: req.session.user.username,
           fullname: req.session.user.fullname,
           email: req.session.user.email,
+          accessType: req.session.user.accesstype,
           accessToken: req.session.token,
         });
 
@@ -115,11 +116,20 @@ router.post('/register/',
       // accesstype
       accesstype = '';
       const domain = email.split('@')[1];
+
       const listMailType =
-        await pool.query(`SELECT mailtype FROM "university" WHERE mailtype = $1`,
+        await pool.query(`SELECT mailtype FROM "university" WHERE mailtype = $1 LIMIT 1`,
           [domain]
         );
-      if (listMailType.rows[0]) {
+
+      const listEmail =
+        await pool.query(`SELECT email FROM "university" WHERE email = $1 LIMIT 1`,
+          [email]
+        );
+
+      if (listEmail.rows[0]) {
+        accesstype = sob.UNIVERSITY;
+      } else if (listMailType.rows[0]) {
         accesstype = sob.STUDENT;
       } else {
         accesstype = sob.PERSONAL;

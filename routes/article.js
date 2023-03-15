@@ -16,6 +16,7 @@ async function checkRoleSubmit(req, res, next) {
           sob.AUTHOR_ID
         ]
       );
+      req.session.user.role = sob.AUTHOR;
       next();
     } else {
       res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
@@ -33,11 +34,11 @@ async function checkOpenAccess(req, res, next) {
     const openAccess = await pool.query(
       `SELECT id, openaccess
       FROM "article" 
-      WHERE A.id = $1 
+      WHERE id = $1 
       LIMIT 1`,
       [id]
     );
-    if (openAccess.rows[0]) {
+    if (openAccess.rows[0].openAccess == true) {
       req.session.openAccess = true;
       next();
     } else {
@@ -52,8 +53,6 @@ async function checkOpenAccess(req, res, next) {
 
 //* User thuộc trường đại học đã trả phí và còn thời hạn
 //* User cá nhân đã trả phí để xem 1 bài báo xác định
-//* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
-//* Reviewer chỉ được xem nội dung bài báo mình đang review
 async function checkAccountAccess(req, res, next) {
   try {
     const { id } = req.body;
@@ -73,19 +72,22 @@ async function checkAccountAccess(req, res, next) {
           await pool.query(`SELECT U.id, U.mailtype, UT.expirationdate AS expirationdate, UT.isexpired AS isexpired
             FROM "university" AS U
             JOIN "universitytransaction" AS UT ON UT.universityid = U.id 
-            WHERE mailtype = $1`,
+            WHERE mailtype = $1
+            LIMIT 1`,
             [mailType]
           );
 
         if (universityTran.rows[0]) {
-          req.session.universityTran = universityTran.rows[0];
+          // req.session.universityTran = universityTran.rows[0];
+          req.session.expirationdate = universityTran.rows[0].expirationdate;
+          req.session.uniTranId = universityTran.rows[0].id;
         } else {
           req.session.universityTran = null;
         }
 
       } else if (access.rows[0].accesstype == sob.PERSONAL) {
         const personalTran =
-          await pool.query(`SELECT * FROM  "personaltransaction" WHERE articleid = $1 AND accountid = $2`,
+          await pool.query(`SELECT * FROM  "personaltransaction" WHERE articleid = $1 AND accountid = $2 LIMIT 1`,
             [
               id,
               req.session.user.id
@@ -93,7 +95,8 @@ async function checkAccountAccess(req, res, next) {
           );
 
         if (personalTran.rows[0]) {
-          req.session.personalTran = personalTran.rows[0];
+          // req.session.personalTran = personalTran.rows[0];
+          req.session.articleTranId = personalTran.rows[0].articleid;
         } else {
           req.session.personalTran = null;
         }
@@ -102,6 +105,51 @@ async function checkAccountAccess(req, res, next) {
       next();
     } else {
       res.status(400).json({ msg: `Không tìm thấy thông tin access` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
+//* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
+//* Reviewer chỉ được xem nội dung bài báo mình đang review
+async function checkRoleFulltext(req, res, next) {
+  try {
+    const { id } = req.body;
+    const author = await pool.query(
+      `SELECT id, articleid, accountid
+      FROM "articleauthor"
+      WHERE articleid = $1 
+      AND accountid = $2 
+      LIMIT 1`,
+      [
+        id,
+        req.session.user.id
+      ]
+    );
+
+    const review =
+      await pool.query(`SELECT A.id, A.title
+        FROM "article" AS A
+        JOIN "review" AS R ON A.id = R.articleid 
+        WHERE A.status = $1 AND R.accountid = $2
+        ORDER BY id
+        DESC`,
+        [
+          sob.PENDING,
+          req.session.user.id
+        ]
+      );
+
+    if ((req.session.user.role == sob.REVIEWER && review.rows[0])
+      || req.session.user.role == sob.EDITOR
+      || req.session.user.role == sob.CEDITOR
+      || req.session.user.role == sob.MEMBER
+      || author.rows[0]) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
     }
   } catch (error) {
     console.log(error);
@@ -134,19 +182,20 @@ async function checkCorresponding(req, res, next) {
       ON M.id = AA.articleid 
       WHERE AA.articleid = $1 
       AND AA.accountid = $2 
-      AND AA.iscorresponding = $3 
       LIMIT 1`,
       [
         id,
-        req.session.user.id,
-        true
+        req.session.user.id
       ]
     );
-    if (correspondingAuthor.rows[0]) {
+    if (correspondingAuthor.rows[0].iscorresponding == true) {
       req.session.article = correspondingAuthor.rows[0];
       next();
-    } else {
+    } else if (correspondingAuthor.rows[0].iscorresponding == false) {
+      req.session.article = correspondingAuthor.rows[0];
       res.status(400).json({ msg: `Vai trò của tác giả không phù hợp` });
+    } else {
+      res.status(200).json({ msg: `Xóa bản thảo thành công` });
     }
   } catch (error) {
     console.log(error);
@@ -160,7 +209,7 @@ async function checkArticleStatus(req, res, next) {
       || req.session.article.status == sob.REVISE) {
       next();
     } else {
-      res.status(400).json({ msg: `Không được phép cập nhật` });
+      res.status(400).json({ msg: `Bài báo đang được xử lí` });
     }
   } catch (error) {
     console.log(error);
@@ -459,8 +508,11 @@ router.put('/manuscript/update/',
 
 //Delete manuscript (author)
 //* chỉ cho phép xóa bản thảo khi chưa được assign reviewer
+//DONE chỉ có corresponding author được quyền xóa
 router.delete('/manuscript/delete/',
   checkRoleAuthor,
+  checkCorresponding,
+  checkArticleStatus,
   async (req, res) => {
     try {
       const { id } = req.body;
@@ -474,6 +526,21 @@ router.delete('/manuscript/delete/',
         `DELETE FROM "article" WHERE id = $1`,
         [id]
       );
+
+      var author = await pool.query(
+        `SELECT id, accountid FROM "articleauthor" WHERE accountid = $1`,
+        [req.session.user.id]
+      );
+
+      if (author.rows.length == 0) {
+        var roleUpdate = await pool.query(
+          `UPDATE "account" SET roleid = $2 WHERE id = $1`,
+          [
+            req.session.user.id,
+            sob.MEMBER_ID
+          ]
+        );
+      }
 
       res.status(200).json();
     } catch (error) {
@@ -530,43 +597,107 @@ router.get('/manuscript/info/', async (req, res) => {
 //* User cá nhân đã trả phí để xem 1 bài báo xác định
 //* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
 //* Reviewer chỉ được xem nội dung bài báo mình đang review
-router.get('/public/', async (req, res) => {
-  try {
-    const { id } = req.body;
-    const list =
-      await pool.query(
-        `SELECT A.id, M.name as major, A.title, A.content, A.openaccess, A.status
-        FROM "article" AS A
-        JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.id = $1
-        LIMIT 1
-        ;`,
-        [id]
+router.get('/public/',
+  checkOpenAccess,
+  checkAccountAccess,
+  async (req, res) => {
+    try {
+      const { id } = req.body;
+      const checkAuthor = await pool.query(
+        `SELECT id, articleid, accountid
+        FROM "articleauthor"
+        WHERE articleid = $1 
+        AND accountid = $2 
+        LIMIT 1`,
+        [
+          id,
+          req.session.user.id
+        ]
       );
-    if (list.rows[0]) {
       var author = [];
+      const review =
+        await pool.query(`SELECT A.id, A.title
+          FROM "article" AS A
+          JOIN "review" AS R ON A.id = R.articleid 
+          WHERE A.status = $1 AND R.accountid = $2
+          ORDER BY id
+          DESC`,
+          [
+            sob.PENDING,
+            req.session.user.id
+          ]
+        );
 
-      for (var i = 0; i < list.rows.length; i++) {
-        var authorList = await pool.query(
-          `SELECT fullname, email 
-          FROM "articleauthor" 
-          WHERE articleId = $1`,
-          [id]
-        );
-        author.push(
-          _.merge(list.rows[i], {
-            author: authorList.rows
-          })
-        );
+      if (req.session.openAccess == true
+        || (req.session.openAccess == false
+          && (req.session.expirationdate > Date.now()
+            || req.session.articleTranId == id
+            || (req.session.user.role == sob.REVIEWER && review.rows[0])
+            || req.session.user.role == sob.EDITOR
+            || req.session.user.role == sob.CEDITOR
+            || checkAuthor.rows[0]
+          )
+        )
+      ) {
+        const list =
+          await pool.query(
+            `SELECT A.id, M.name as major, A.title, A.content, A.openaccess, A.status
+            FROM "article" AS A
+            JOIN "major" AS M ON A.majorid = M.id 
+            WHERE A.id = $1
+            LIMIT 1
+            ;`,
+            [id]
+          );
+        if (list.rows[0]) {
+
+          for (var i = 0; i < list.rows.length; i++) {
+            var authorList = await pool.query(
+              `SELECT fullname, email 
+              FROM "articleauthor" 
+              WHERE articleId = $1`,
+              [id]
+            );
+            author.push(
+              _.merge(list.rows[i], {
+                author: authorList.rows
+              })
+            );
+          }
+          res.status(200).json(list.rows);
+        } else {
+          res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+        }
+        // } else if (req.session.openAccess == false && (req.session.universityTran.expirationdate <= Date.now())) {
+      } else if (req.session.openAccess == false && (req.session.expirationdate <= Date.now())) {
+        try {
+          const paymentid = req.session.uniTranId;
+          //#FIXING
+          var universityTranUpdate = await pool.query(
+            `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
+            [
+              // req.session.universityTran.id,
+              paymentid,
+              true
+            ]
+          );
+          res.status(200).json();
+        } catch (error) {
+          console.log(error);
+          res.status(400).json({ msg: 'Lỗi hệ thống!' });
+        }
+        // res.status(400).json({ msg: 'Quyền truy cập của bạn đã quá hạn' });
+      } else if (req.session.openAccess == false && req.session.universityTran == null) {
+        res.status(400).json({ msg: 'payment screen' });
+      } else if (req.session.openAccess == false && req.session.personalTran == null) {
+        res.status(400).json({ msg: 'payment screen' });
+      } else {
+        res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
       }
-      res.status(200).json(list.rows);
-    } else {
-      res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống!' });
-  }
-});
+  });
 
 module.exports = router;

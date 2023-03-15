@@ -5,7 +5,9 @@ const sob = require('../staticObj');
 
 async function checkRoleViewAllReview(req, res, next) {
   try {
-    if (req.session.user.role == sob.EDITOR || req.session.user.role == sob.AUTHOR) {
+    if (req.session.user.role == sob.EDITOR
+      || req.session.user.role == sob.CEDITOR
+      || req.session.user.role == sob.AUTHOR) {
       next();
     } else {
       res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
@@ -18,7 +20,8 @@ async function checkRoleViewAllReview(req, res, next) {
 
 async function checkRoleEditor(req, res, next) {
   try {
-    if (req.session.user.role == sob.EDITOR) {
+    if (req.session.user.role == sob.EDITOR
+      || req.session.user.role == sob.CEDITOR) {
       next();
     } else {
       res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });

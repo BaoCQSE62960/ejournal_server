@@ -37,7 +37,8 @@ async function sendEmail(req, res, email, title, text) {
 
 async function checkRoleEditor(req, res, next) {
     try {
-        if (req.session.user.role == sob.EDITOR) {
+        if (req.session.user.role == sob.EDITOR
+            || req.session.user.role == sob.CEDITOR) {
             next();
         } else {
             res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
