@@ -1,7 +1,38 @@
 const { Router } = require('express');
 const router = Router();
 const pool = require('../db');
+var nodemailer = require('nodemailer');
 const sob = require('../staticObj');
+
+var transporter = nodemailer.createTransport({
+  service: sob.MAIL_SERVICE,
+  auth: {
+    user: sob.TRANSPORT_EMAIL,
+    pass: sob.TRANSPORT_PASS
+  }
+});
+
+async function sendEmail(req, res, email, title, text) {
+  var mailOptions = {
+    from: sob.TRANSPORT_EMAIL,
+    to: email,
+    subject: title,
+    text: text
+  };
+
+  try {
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log('Email sent! ');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi gửi mail' });
+  }
+}
 
 async function checkRoleViewAllReview(req, res, next) {
   try {
@@ -20,8 +51,7 @@ async function checkRoleViewAllReview(req, res, next) {
 
 async function checkRoleEditor(req, res, next) {
   try {
-    if (req.session.user.role == sob.EDITOR
-      || req.session.user.role == sob.CEDITOR) {
+    if (req.session.user.role == sob.EDITOR) {
       next();
     } else {
       res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
@@ -156,17 +186,34 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
         ]
       );
 
-    var statusArticle =
-      await pool.query(`UPDATE "article" 
-        SET status = $2 
-        WHERE id = $1`,
-        [
-          articleid,
-          sob.REVIEWED
-        ]
-      );
+    var statusArticle = await pool.query(`UPDATE "article" 
+      SET status = $2 
+      WHERE id = $1`,
+      [
+        articleid,
+        sob.REVIEWED
+      ]
+    );
 
+    var correspondingEmail = await pool.query(
+      `SELECT email
+      FROM "articleauthor" 
+      WHERE articleid = $1 
+      AND iscorresponding = $2 
+      LIMIT 1`,
+      [
+        articleid,
+        true,
+      ]
+    );
     res.status(200).json({ msg: 'Gửi review thành công' });
+
+    if (res.status(200)) {
+      sendEmail(req, res,
+        correspondingEmail.rows[0].email,
+        sob.REVIEWED_MAIL_TITLE,
+        sob.REVIEWED_MAIL_CONTENT + content);
+    }
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });

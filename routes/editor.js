@@ -126,12 +126,21 @@ router.put('/accept/', checkRoleEditor, async (req, res) => {
             ]
         );
 
+        var title = await pool.query(
+            `SELECT title
+            FROM "article" 
+            WHERE id = $1 
+            LIMIT 1`,
+            [id]
+        );
+
         res.status(200).json();
+
         if (res.status(200)) {
             sendEmail(req, res,
                 correspondingEmail.rows[0].email,
                 sob.ACCEPT_MAIL_TITLE,
-                sob.ACCEPT_MAIL_CONTENT);
+                sob.ACCEPT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
         }
     } catch (error) {
         console.log(error);
@@ -162,12 +171,22 @@ router.put('/reject/', checkRoleEditor, async (req, res) => {
                 sob.REJECTED,
             ]
         );
+
+        var title = await pool.query(
+            `SELECT title
+            FROM "article" 
+            WHERE id = $1 
+            LIMIT 1`,
+            [id]
+        );
+
         res.status(200).json();
+
         if (res.status(200)) {
             sendEmail(req, res,
                 correspondingEmail.rows[0].email,
                 sob.REJECT_MAIL_TITLE,
-                sob.REJECT_MAIL_CONTENT);
+                sob.REJECT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
         }
     } catch (error) {
         console.log(error);
@@ -199,12 +218,21 @@ router.put('/revise/', checkRoleEditor, async (req, res) => {
             ]
         );
 
+        var title = await pool.query(
+            `SELECT title
+            FROM "article" 
+            WHERE id = $1 
+            LIMIT 1`,
+            [id]
+        );
+
         res.status(200).json();
+
         if (res.status(200)) {
             sendEmail(req, res,
                 correspondingEmail.rows[0].email,
                 sob.REVISE_MAIL_TITLE,
-                sob.REVISE_MAIL_CONTENT);
+                sob.REVISE_FIRST_MAIL_CONTENT + title.rows[0].title + sob.REVISE_LAST_MAIL_CONTENT);
         }
     } catch (error) {
         console.log(error);

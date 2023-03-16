@@ -33,10 +33,14 @@ class sob {
   static REJECT_MAIL_TITLE = 'Bài báo đã bị từ chối';
   static REVISE_MAIL_TITLE = 'Bài báo cần chỉnh sửa';
   static REGISTER_MAIL_TITLE = 'Đăng ký thành công';
-  static ACCEPT_MAIL_CONTENT = 'Biên tập viên đã duyệt bài báo của bạn.';
-  static REJECT_MAIL_CONTENT = 'Biên tập viên đã từ chối bài báo của bạn.';
-  static REVISE_MAIL_CONTENT = 'Biên tập viên đề xuất bài báo của bạn cần được chỉnh sửa.';
+  static REVIEWED_MAIL_TITLE = 'Bài đánh giá mới';
+  static LAST_MINE_MAIL_CONTENT = ' của bạn.';
+  static ACCEPT_MAIL_CONTENT = 'Biên tập viên đã duyệt bài báo ';
+  static REJECT_MAIL_CONTENT = 'Biên tập viên đã từ chối bài báo ';
+  static REVISE_FIRST_MAIL_CONTENT = 'Biên tập viên đề xuất bài báo ';
+  static REVISE_LAST_MAIL_CONTENT = ' của bạn cần được chỉnh sửa.';
   static REGISTER_MAIL_CONTENT = 'Bạn đã đăng ký tài khoản thành công.';
+  static REVIEWED_MAIL_CONTENT = 'Đã có bài đánh giá mới cho bản thảo của bạn. \n' + 'Nội dung đánh giá: ';
 }
 
 module.exports = sob;
