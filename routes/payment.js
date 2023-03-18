@@ -16,8 +16,35 @@ async function checkRoleAdmin(req, res, next) {
   }
 }
 
+async function checkPersonal(req, res, next) {
+  try {
+    if (req.session.user.role == sob.MEMBER || req.session.user.role == sob.AUTHOR) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
+async function checkUniversity(req, res, next) {
+  try {
+    if (req.session.user.accesstype == sob.UNIVERSITY &&
+      (req.session.user.role == sob.MEMBER || req.session.user.role == sob.AUTHOR)) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
 //Submit personal payment
-router.post('/submitpersonal/', async (req, res) => {
+router.post('/submitpersonal/', checkPersonal, async (req, res) => {
   try {
     const accountid = req.session.user.id;
     const { articleid, amount } = req.body;
@@ -39,7 +66,7 @@ router.post('/submitpersonal/', async (req, res) => {
 });
 
 //Submit university payment
-router.post('/submituniversity/', async (req, res) => {
+router.post('/submituniversity/', checkUniversity, async (req, res) => {
   try {
     const { universityid, amount, period } = req.body;
     // isexpired = false;
@@ -66,7 +93,7 @@ router.post('/submituniversity/', async (req, res) => {
 });
 
 //Update university payment
-router.put('/updateuniversity/', async (req, res) => {
+router.put('/updateuniversity/', checkUniversity, async (req, res) => {
   try {
     const { paymentid, amount, period } = req.body;
     // isexpired = false;
@@ -96,6 +123,25 @@ router.put('/updateuniversity/', async (req, res) => {
 });
 
 //Get list payment of current account
+router.get('/mypayment/', checkPersonal, async (req, res) => {
+  try {
+    const list =
+      await pool.query(`SELECT id, articleid, amount, creationtime
+        FROM "personaltransaction"
+        WHERE accountid = $1
+        ORDER BY id
+        DESC
+        ;`,
+        [req.session.user.id]
+      );
+    res.status(200).json({ list: list.rows });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
+//Get list payment of personal account
 router.get('/personalpayment/', checkRoleAdmin, async (req, res) => {
   try {
     const list =
