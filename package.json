@@ -26,6 +26,7 @@
     "node": "^16.13.2",
     "nodemailer": "^6.9.1",
     "nodemon": "^2.0.20",
+    "pdfkit": "^0.13.0",
     "pg": "^8.10.0",
     "pg-hstore": "^2.3.4",
     "randomstring": "^1.2.2",

@@ -4,6 +4,8 @@ const pool = require("../db");
 const _ = require("lodash");
 const sob = require("../staticObj");
 const multer = require("multer"); // for file
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
 
 async function checkRoleSubmit(req, res, next) {
   try {
@@ -335,9 +337,6 @@ router.post("/submit/", checkRoleSubmit, async (req, res) => {
   }
 });
 
-
-
-
 //GET Major list for submit
 router.get("/submit/major", checkRoleSubmit, async (req, res) => {
   try {
@@ -353,21 +352,18 @@ router.get("/submit/major", checkRoleSubmit, async (req, res) => {
   }
 });
 
+// this apis for file
 
 
-// this apis for file 
-
-const upload = multer();
 router.post(
   "/submit-file/",
   checkRoleSubmit,
-  upload.single("file"),
+  
   async (req, res) => {
     try {
-      const { summary, content, openaccess, majorid, authorlist } = req.body;
-      const { originalname, buffer } = req.file;
-      const title = originalname.replace(/\.[^/.]+$/, "");
-      const doc = req.file.buffer;
+      const {title, summary, content, doc, openaccess, majorid, authorlist } = req.body;
+      
+      
       var author = [];
 
       var newManuscript = await pool.query(
@@ -384,53 +380,53 @@ router.post(
           majorid,
         ]
       );
-       
-      // for (var x = 0; x < authorlist.length; x++) {
-      //   var authorItem = await pool.query(
-      //     `SELECT id, fullname, email
-      //     FROM "account" 
-      //     WHERE fullname = $1 
-      //     AND email = $2`,
-      //     [authorlist[x].fullname, authorlist[x].email]
-      //   );
 
-      //   if (authorItem.rows[0]) {
-      //     for (var i = 0; i < authorItem.rows.length; i++) {
-      //       var detailAccountAuthor = await pool.query(
-      //         `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
-      //         [
-      //           newManuscript.rows[0].id,
-      //           authorItem.rows[i].id,
-      //           authorItem.rows[i].fullname,
-      //           authorItem.rows[i].email,
-      //           authorlist[x].iscorresponding,
-      //         ]
-      //       );
+      for (var x = 0; x < authorlist.length; x++) {
+        var authorItem = await pool.query(
+          `SELECT id, fullname, email
+          FROM "account"
+          WHERE fullname = $1
+          AND email = $2`,
+          [authorlist[x].fullname, authorlist[x].email]
+        );
 
-      //       author.push(
-      //         _.merge(authorItem.rows[i], {
-      //           author: detailAccountAuthor.rows,
-      //         })
-      //       );
-      //     }
-      //   } else {
-      //     var detailFreeAuthor = await pool.query(
-      //       `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
-      //       [
-      //         newManuscript.rows[0].id,
-      //         authorlist[x].fullname,
-      //         authorlist[x].email,
-      //         authorlist[x].iscorresponding,
-      //       ]
-      //     );
+        if (authorItem.rows[0]) {
+          for (var i = 0; i < authorItem.rows.length; i++) {
+            var detailAccountAuthor = await pool.query(
+              `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
+              [
+                newManuscript.rows[0].id,
+                authorItem.rows[i].id,
+                authorItem.rows[i].fullname,
+                authorItem.rows[i].email,
+                authorlist[x].iscorresponding,
+              ]
+            );
 
-      //     author.push(
-      //       _.merge(authorItem.rows[i], {
-      //         author: detailFreeAuthor.rows,
-      //       })
-      //     );
-      //   }
-      // }
+            author.push(
+              _.merge(authorItem.rows[i], {
+                author: detailAccountAuthor.rows,
+              })
+            );
+          }
+        } else {
+          var detailFreeAuthor = await pool.query(
+            `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
+            [
+              newManuscript.rows[0].id,
+              authorlist[x].fullname,
+              authorlist[x].email,
+              authorlist[x].iscorresponding,
+            ]
+          );
+
+          author.push(
+            _.merge(authorItem.rows[i], {
+              author: detailFreeAuthor.rows,
+            })
+          );
+        }
+      }
       res.status(200).json();
     } catch (error) {
       console.log(error);
@@ -438,7 +434,6 @@ router.post(
     }
   }
 );
-
 
 //View manuscript details (author, reviewer, editor)
 router.get("/manuscript/info-file/", async (req, res) => {
@@ -454,6 +449,8 @@ router.get("/manuscript/info-file/", async (req, res) => {
       [id]
     );
     if (selectedManuscript.rows[0]) {
+      const pdfData = selectedManuscript.rows[0].doc;
+
       var author = [];
       for (var i = 0; i < selectedManuscript.rows.length; i++) {
         var authorList = await pool.query(
@@ -470,6 +467,7 @@ router.get("/manuscript/info-file/", async (req, res) => {
         );
       }
       res.status(200).json({ article: selectedManuscript.rows });
+      
     } else {
       res.status(400).json({ msg: "Không tìm thấy thông tin" });
     }
@@ -522,12 +520,6 @@ router.get("/public-file/", async (req, res) => {
     res.status(400).json({ msg: "Lỗi hệ thống!" });
   }
 });
-
-
-
-
-
-
 
 //Edit manuscript (author)
 //DONE chỉ cho phép chỉnh sửa bản thảo khi status là REVISE hoặc khi trạng thái là WAITING
