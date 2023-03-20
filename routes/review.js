@@ -151,7 +151,7 @@ router.get('/pending/', checkRoleReviewer, async (req, res) => {
 });
 
 //View review (editor, author)
-router.get('/view/all/', checkRoleViewAllReview, async (req, res) => {
+router.post('/view/all/', checkRoleViewAllReview, async (req, res) => {
   try {
     const { articleid } = req.body;
 
