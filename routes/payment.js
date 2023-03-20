@@ -68,18 +68,18 @@ router.post('/submitpersonal/', checkPersonal, async (req, res) => {
 //Submit university payment
 router.post('/submituniversity/', checkUniversity, async (req, res) => {
   try {
-    const { universityid, amount, period } = req.body;
-    // isexpired = false;
+    const { amount, period } = req.body;
 
-    // if (new Date(expirationdate) <= new Date()) {
-    //   isexpired = true;
-    // }
+    const universityInformation = await pool.query(
+      `SELECT id FROM "university" WHERE email = $1 LIMIT 1`,
+      [req.session.user.email]
+    );
 
     var paymentinfo =
       await pool.query(`INSERT INTO "universitytransaction"(universityid, amount, expirationdate, isexpired) 
           VALUES($1,$2,CURRENT_TIMESTAMP::DATE + $3::integer,$4)`,
         [
-          universityid,
+          universityInformation.rows[0].id,
           amount,
           period,
           false
@@ -206,6 +206,29 @@ router.get('/universitypayment/:id', checkRoleAdmin, async (req, res) => {
         LIMIT 1
         ;`,
         [id]
+      );
+    res.status(200).json(paymentinfo.rows[0]);
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
+//Get university payment detail for corresponding user
+router.get('/universitypayment/corresponding', checkRoleAdmin, async (req, res) => {
+  try {
+    const universityInformation = await pool.query(
+      `SELECT id FROM "university" WHERE email = $1 LIMIT 1`,
+      [req.session.user.email]
+    );
+
+    const paymentinfo =
+      await pool.query(`SELECT *
+        FROM "universitytransaction"
+        WHERE id = $1
+        LIMIT 1
+        ;`,
+        [universityInformation.rows[0].id]
       );
     res.status(200).json(paymentinfo.rows[0]);
   } catch (error) {
