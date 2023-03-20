@@ -215,7 +215,7 @@ router.get('/universitypayment/:id', checkRoleAdmin, async (req, res) => {
 });
 
 //Get university payment detail for corresponding user
-router.get('/universitypayment/corresponding/', checkRoleAdmin, async (req, res) => {
+router.get('/universitypayment/corresponding/', checkUniversity, async (req, res) => {
   try {
     const universityInformation = await pool.query(
       `SELECT id FROM "university" WHERE email = $1 LIMIT 1`,
