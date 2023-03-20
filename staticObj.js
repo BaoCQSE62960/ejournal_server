@@ -18,6 +18,8 @@ class sob {
   static PENDING = 'PENDING';
   static REVIEWED = 'REVIEWED';
   static REVISE = 'REVISE';
+  static PUBLIC = 'PUBLIC';
+  static RESTRICTED = 'RESTRICTED';
   static UNIVERSITY = 'UNIVERSITY';
   static PERSONAL = 'PERSONAL';
   static STUDENT = 'STUDENT';
@@ -34,6 +36,8 @@ class sob {
   static REVISE_MAIL_TITLE = 'Bài báo cần chỉnh sửa';
   static REGISTER_MAIL_TITLE = 'Đăng ký thành công';
   static REVIEWED_MAIL_TITLE = 'Bài đánh giá mới';
+  static PUBLIC_MAIL_TITLE = 'Bài báo đã được đăng';
+  static RESTRICTED_MAIL_TITLE = 'Bài báo đã bị hạn chế';
   static LAST_MINE_MAIL_CONTENT = ' của bạn.';
   static ACCEPT_MAIL_CONTENT = 'Biên tập viên đã duyệt bài báo ';
   static REJECT_MAIL_CONTENT = 'Biên tập viên đã từ chối bài báo ';
@@ -41,6 +45,9 @@ class sob {
   static REVISE_LAST_MAIL_CONTENT = ' của bạn cần được chỉnh sửa.';
   static REGISTER_MAIL_CONTENT = 'Bạn đã đăng ký tài khoản thành công.';
   static REVIEWED_MAIL_CONTENT = 'Đã có bài đánh giá mới cho bản thảo của bạn. \n' + 'Nội dung đánh giá: ';
+  static CHIEF_FIRST_MAIL_CONTENT = 'Bài báo ';
+  static PUBLIC_LAST_MAIL_CONTENT = ' của bạn đã được đăng.';
+  static RESTRICTED_LAST_MAIL_CONTENT = ' của bạn đã bị hạn chế truy cập.';
 }
 
 module.exports = sob;
