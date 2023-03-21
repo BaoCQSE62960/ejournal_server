@@ -129,17 +129,19 @@ router.get('/pending/', checkRoleReviewer, async (req, res) => {
   try {
     const reviewerid = req.session.user.id;
 
+    //content
     const list =
       await pool.query(`SELECT A.id, A.title, M.name as majorname, A.status
         FROM "article" AS A
         JOIN "review" AS R ON A.id = R.articleid 
         JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.status = $1 AND R.accountid = $2
+        WHERE A.status = $1 AND R.accountid = $2 AND R.suggest = $3
         ORDER BY id
         DESC`,
         [
           sob.PENDING,
-          reviewerid
+          reviewerid,
+          null
         ]
       );
 
@@ -151,7 +153,8 @@ router.get('/pending/', checkRoleReviewer, async (req, res) => {
 });
 
 //View review (editor, author)
-router.get('/view/all/', checkRoleViewAllReview, async (req, res) => {
+//# GET -> POST
+router.post('/view/all/', checkRoleViewAllReview, async (req, res) => {
   try {
     const { articleid } = req.body;
 
@@ -172,28 +175,43 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
   try {
     const { articleid, content, suggest } = req.body;
 
-    var submitReview =
-      await pool.query(`UPDATE "review" 
-        SET content = $3, 
-        suggest = $4
-        WHERE articleid = $1 
-        AND accountid = $2`,
-        [
-          articleid,
-          req.session.user.id,
-          content,
-          suggest
-        ]
-      );
-
-    var statusArticle = await pool.query(`UPDATE "article" 
-      SET status = $2 
-      WHERE id = $1`,
+    var submitReview = await pool.query(
+      `UPDATE "review" 
+      SET content = $3, 
+      suggest = $4
+      WHERE articleid = $1 
+      AND accountid = $2`,
       [
         articleid,
-        sob.REVIEWED
+        req.session.user.id,
+        content,
+        suggest
       ]
     );
+
+    //content
+    var checkReview = await pool.query(
+      `SELECT content, suggest
+      FROM "review" 
+      WHERE articleid = $1 
+      AND suggest = $2
+      LIMIT 1`,
+      [
+        articleid,
+        null
+      ]
+    );
+
+    if (checkReview.rowCount <= 0) {
+      var statusArticle = await pool.query(`UPDATE "article" 
+        SET status = $2 
+        WHERE id = $1`,
+        [
+          articleid,
+          sob.REVIEWED
+        ]
+      );
+    }
 
     var correspondingEmail = await pool.query(
       `SELECT email
