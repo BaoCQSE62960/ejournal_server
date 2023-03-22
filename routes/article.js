@@ -217,7 +217,7 @@ router.get('/', async (req, res) => {
 });
 
 //View article details (public)
-router.get('/info/', async (req, res) => {
+router.post('/info/', async (req, res) => {
   try {
     const { id } = req.body;
     var selectedArticle =
@@ -503,7 +503,7 @@ router.get("/manuscript/info-file/", async (req, res) => {
 //* User cá nhân đã trả phí để xem 1 bài báo xác định
 //* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
 //* Reviewer chỉ được xem nội dung bài báo mình đang review
-router.get("/public-file/", async (req, res) => {
+router.post("/public-file/", async (req, res) => {
   try {
     const { id } = req.body;
     const list = await pool.query(
@@ -560,15 +560,17 @@ router.put('/manuscript/update/',
         SET title = $2, 
         summary = $3, 
         content = $4, 
-        openaccess = $5, 
-        majorid = $6, 
-        status = $7 
+        doc = $5,
+        openaccess = $6, 
+        majorid = $7, 
+        status = $8 
         WHERE id = $1`,
         [
           req.body.id,
           req.body.title,
           req.body.summary,
           req.body.content,
+          req.body.doc,
           req.body.openaccess,
           req.body.majorid,
           sob.WAITING
