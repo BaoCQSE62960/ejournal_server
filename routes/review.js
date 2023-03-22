@@ -135,13 +135,12 @@ router.get('/pending/', checkRoleReviewer, async (req, res) => {
         FROM "article" AS A
         JOIN "review" AS R ON A.id = R.articleid 
         JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.status = $1 AND R.accountid = $2 AND R.suggest = $3
+        WHERE A.status = $1 AND R.accountid = $2 AND R.suggest IS NULL
         ORDER BY id
         DESC`,
         [
           sob.PENDING,
-          reviewerid,
-          null
+          reviewerid
         ]
       );
 
@@ -194,12 +193,9 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
       `SELECT content, suggest
       FROM "review" 
       WHERE articleid = $1 
-      AND suggest = $2
+      AND suggest IS NULL
       LIMIT 1`,
-      [
-        articleid,
-        null
-      ]
+      [articleid]
     );
 
     if (checkReview.rowCount <= 0) {
