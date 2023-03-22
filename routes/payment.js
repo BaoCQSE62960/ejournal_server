@@ -241,7 +241,7 @@ router.get('/unicorresponding/', checkUniversity, async (req, res) => {
         ]
       );
       paymentinfo.rows[0].isexpired = false;
-    } else {
+    } else if (paymentinfo.rows[0].expirationdate <= Date.now()) {
       var universityTranUpdate = await pool.query(
         `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
         [
@@ -250,6 +250,8 @@ router.get('/unicorresponding/', checkUniversity, async (req, res) => {
         ]
       );
       paymentinfo.rows[0].isexpired = true;
+    } else {
+      res.status(200).json("Không có thông tin thanh toán");
     }
 
     res.status(200).json(paymentinfo.rows[0]);
