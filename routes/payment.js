@@ -144,8 +144,10 @@ router.get('/mypayment/', checkPersonal, async (req, res) => {
 router.get('/personalpayment/', checkRoleAdmin, async (req, res) => {
   try {
     const list =
-      await pool.query(`SELECT *
-        FROM "personaltransaction"
+      await pool.query(`SELECT PT.amount, PT.creationtime, A.title AS title, U.fullname AS fullname, A.openaccess AS type
+        FROM "personaltransaction" AS PT
+        JOIN "article" AS A ON A.id = PT.articleid 
+        JOIN "account" AS U ON U.id = PT.accountid 
         ORDER BY id
         DESC
         ;`
