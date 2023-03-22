@@ -202,7 +202,7 @@ async function checkCorrespondingWithParams(req, res, next) {
 
 async function checkArticleStatus(req, res, next) {
   try {
-    if ((req.session.article.status == sob.WAITING)
+    if (req.session.article.status == sob.WAITING
       || req.session.article.status == sob.REVISE) {
       next();
     } else {
@@ -724,7 +724,8 @@ router.get('/manuscript/info/', async (req, res) => {
 //* User cá nhân đã trả phí để xem 1 bài báo xác định
 //* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
 //* Reviewer chỉ được xem nội dung bài báo mình đang review
-router.get('/public/',
+// #GET -> POST
+router.post('/public/',
   checkOpenAccess,
   checkAccountAccess,
   async (req, res) => {

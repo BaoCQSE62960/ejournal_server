@@ -62,10 +62,26 @@ async function checkRoleEditorInChief(req, res, next) {
     }
 }
 
-//GET Manuscript list (Editor)
-router.get('/manuscript/', checkRoleEditor, async (req, res) => {
+async function checkArticleStatus(req, res, next) {
     try {
-        const list = await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
+        if (req.session.article.status == sob.REVIEWED) {
+            next();
+        } else {
+            res.status(400).json({ msg: `Thao tác không hợp lệ` });
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ msg: 'Lỗi hệ thống' });
+    }
+}
+
+//GET Manuscript list (Editor)
+router.get('/manuscript/',
+    checkRoleEditor,
+    checkArticleStatus,
+    async (req, res) => {
+        try {
+            const list = await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
             FROM "article" AS J 
             JOIN "major" AS M
             ON J.majorid = M.id
@@ -73,172 +89,185 @@ router.get('/manuscript/', checkRoleEditor, async (req, res) => {
             ORDER BY id
             DESC
             ;`,
-            [sob.ACCEPTED]
-        );
-        if (list.rows[0]) {
-            var author = [];
+                [sob.ACCEPTED]
+            );
+            if (list.rows[0]) {
+                var author = [];
 
-            for (var i = 0; i < list.rows.length; i++) {
-                var authorList = await pool.query(
-                    `SELECT fullname, email 
+                for (var i = 0; i < list.rows.length; i++) {
+                    var authorList = await pool.query(
+                        `SELECT fullname, email 
                     FROM "articleauthor" 
                     WHERE articleId = $1`,
-                    [list.rows[i].id]
-                );
+                        [list.rows[i].id]
+                    );
 
-                author.push(
-                    _.merge(list.rows[i], {
-                        author: authorList.rows,
-                    })
-                );
+                    author.push(
+                        _.merge(list.rows[i], {
+                            author: authorList.rows,
+                        })
+                    );
+                }
+                res.status(200).json({ list: list.rows });
+            } else {
+                res.status(400).json({ msg: 'Không tìm thấy thông tin' });
             }
-            res.status(200).json({ list: list.rows });
-        } else {
-            res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+        } catch (error) {
+            console.log(error);
+            res.status(400).json({ msg: 'Lỗi hệ thống!' });
         }
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-});
+);
 
 //Accept article
-router.put('/accept/', checkRoleEditor, async (req, res) => {
-    try {
-        const { id } = req.body;
-        var correspondingEmail = await pool.query(
-            `SELECT email
+router.put('/accept/',
+    checkRoleEditor,
+    checkArticleStatus,
+    async (req, res) => {
+        try {
+            const { id } = req.body;
+            var correspondingEmail = await pool.query(
+                `SELECT email
             FROM "articleauthor" 
             WHERE articleid = $1 
             AND iscorresponding = $2 
             LIMIT 1`,
-            [
-                id,
-                true,
-            ]
-        );
+                [
+                    id,
+                    true,
+                ]
+            );
 
-        var acceptManuscript = await pool.query(
-            `UPDATE "article" SET status = $2 WHERE id = $1`,
-            [
-                id,
-                sob.ACCEPTED,
-            ]
-        );
+            var acceptManuscript = await pool.query(
+                `UPDATE "article" SET status = $2 WHERE id = $1`,
+                [
+                    id,
+                    sob.ACCEPTED,
+                ]
+            );
 
-        var title = await pool.query(
-            `SELECT title
+            var title = await pool.query(
+                `SELECT title
             FROM "article" 
             WHERE id = $1 
             LIMIT 1`,
-            [id]
-        );
+                [id]
+            );
 
-        res.status(200).json();
+            res.status(200).json();
 
-        if (res.status(200)) {
-            sendEmail(req, res,
-                correspondingEmail.rows[0].email,
-                sob.ACCEPT_MAIL_TITLE,
-                sob.ACCEPT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+            if (res.status(200)) {
+                sendEmail(req, res,
+                    correspondingEmail.rows[0].email,
+                    sob.ACCEPT_MAIL_TITLE,
+                    sob.ACCEPT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+            }
+        } catch (error) {
+            console.log(error);
+            res.status(400).json({ msg: 'Lỗi hệ thống!' });
         }
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-});
+);
 
 //Reject article
-router.put('/reject/', checkRoleEditor, async (req, res) => {
-    try {
-        const { id } = req.body;
-        var correspondingEmail = await pool.query(
-            `SELECT email
+router.put('/reject/',
+    checkRoleEditor,
+    checkArticleStatus,
+    async (req, res) => {
+        try {
+            const { id } = req.body;
+            var correspondingEmail = await pool.query(
+                `SELECT email
             FROM "articleauthor" 
             WHERE articleid = $1 
             AND iscorresponding = $2 
             LIMIT 1`,
-            [
-                id,
-                true,
-            ]
-        );
+                [
+                    id,
+                    true,
+                ]
+            );
 
-        var rejectManuscript = await pool.query(
-            `UPDATE "article" SET status = $2 WHERE id = $1`,
-            [
-                id,
-                sob.REJECTED,
-            ]
-        );
+            var rejectManuscript = await pool.query(
+                `UPDATE "article" SET status = $2 WHERE id = $1`,
+                [
+                    id,
+                    sob.REJECTED,
+                ]
+            );
 
-        var title = await pool.query(
-            `SELECT title
+            var title = await pool.query(
+                `SELECT title
             FROM "article" 
             WHERE id = $1 
             LIMIT 1`,
-            [id]
-        );
+                [id]
+            );
 
-        res.status(200).json();
+            res.status(200).json();
 
-        if (res.status(200)) {
-            sendEmail(req, res,
-                correspondingEmail.rows[0].email,
-                sob.REJECT_MAIL_TITLE,
-                sob.REJECT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+            if (res.status(200)) {
+                sendEmail(req, res,
+                    correspondingEmail.rows[0].email,
+                    sob.REJECT_MAIL_TITLE,
+                    sob.REJECT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+            }
+        } catch (error) {
+            console.log(error);
+            res.status(400).json({ msg: 'Lỗi hệ thống!' });
         }
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-});
+);
 
 //Revise article
-router.put('/revise/', checkRoleEditor, async (req, res) => {
-    try {
-        const { id } = req.body;
-        var correspondingEmail = await pool.query(
-            `SELECT email
+router.put('/revise/',
+    checkRoleEditor,
+    checkArticleStatus,
+    async (req, res) => {
+        try {
+            const { id } = req.body;
+            var correspondingEmail = await pool.query(
+                `SELECT email
             FROM "articleauthor" 
             WHERE articleid = $1 
             AND iscorresponding = $2 
             LIMIT 1`,
-            [
-                id,
-                true,
-            ]
-        );
+                [
+                    id,
+                    true,
+                ]
+            );
 
-        var reviseManuscript = await pool.query(
-            `UPDATE "article" SET status = $2 WHERE id = $1`,
-            [
-                id,
-                sob.REVISE,
-            ]
-        );
+            var reviseManuscript = await pool.query(
+                `UPDATE "article" SET status = $2 WHERE id = $1`,
+                [
+                    id,
+                    sob.REVISE,
+                ]
+            );
 
-        var title = await pool.query(
-            `SELECT title
+            var title = await pool.query(
+                `SELECT title
             FROM "article" 
             WHERE id = $1 
             LIMIT 1`,
-            [id]
-        );
+                [id]
+            );
 
-        res.status(200).json();
+            res.status(200).json();
 
-        if (res.status(200)) {
-            sendEmail(req, res,
-                correspondingEmail.rows[0].email,
-                sob.REVISE_MAIL_TITLE,
-                sob.REVISE_FIRST_MAIL_CONTENT + title.rows[0].title + sob.REVISE_LAST_MAIL_CONTENT);
+            if (res.status(200)) {
+                sendEmail(req, res,
+                    correspondingEmail.rows[0].email,
+                    sob.REVISE_MAIL_TITLE,
+                    sob.REVISE_FIRST_MAIL_CONTENT + title.rows[0].title + sob.REVISE_LAST_MAIL_CONTENT);
+            }
+        } catch (error) {
+            console.log(error);
+            res.status(400).json({ msg: 'Lỗi hệ thống!' });
         }
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-});
+);
 
 //Dashboard (editor-in-chief)
 
