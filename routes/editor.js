@@ -64,7 +64,11 @@ async function checkRoleEditorInChief(req, res, next) {
 
 async function checkArticleStatus(req, res, next) {
     try {
-        if (req.session.article.status == sob.REVIEWED) {
+        const { id } = req.body;
+        var manuscript = await pool.query(`SELECT status FROM "article" WHERE id = $1 LIMIT 1`,
+            [id]
+        );
+        if (manuscript.rows[0].status == sob.REVIEWED) {
             next();
         } else {
             res.status(400).json({ msg: `Thao tác không hợp lệ` });
@@ -78,7 +82,6 @@ async function checkArticleStatus(req, res, next) {
 //GET Manuscript list (Editor)
 router.get('/manuscript/',
     checkRoleEditor,
-    checkArticleStatus,
     async (req, res) => {
         try {
             const list = await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
@@ -125,15 +128,15 @@ router.put('/accept/',
     checkArticleStatus,
     async (req, res) => {
         try {
-            const { id } = req.body;
+            // const { id } = req.body;
             var correspondingEmail = await pool.query(
                 `SELECT email
-            FROM "articleauthor" 
-            WHERE articleid = $1 
-            AND iscorresponding = $2 
-            LIMIT 1`,
+                FROM "articleauthor" 
+                WHERE articleid = $1 
+                AND iscorresponding = $2 
+                LIMIT 1`,
                 [
-                    id,
+                    req.body.id,
                     true,
                 ]
             );
@@ -141,17 +144,17 @@ router.put('/accept/',
             var acceptManuscript = await pool.query(
                 `UPDATE "article" SET status = $2 WHERE id = $1`,
                 [
-                    id,
+                    req.body.id,
                     sob.ACCEPTED,
                 ]
             );
 
             var title = await pool.query(
                 `SELECT title
-            FROM "article" 
-            WHERE id = $1 
-            LIMIT 1`,
-                [id]
+                FROM "article" 
+                WHERE id = $1 
+                LIMIT 1`,
+                [req.body.id]
             );
 
             res.status(200).json();
@@ -175,15 +178,15 @@ router.put('/reject/',
     checkArticleStatus,
     async (req, res) => {
         try {
-            const { id } = req.body;
+            // const { id } = req.body;
             var correspondingEmail = await pool.query(
                 `SELECT email
-            FROM "articleauthor" 
-            WHERE articleid = $1 
-            AND iscorresponding = $2 
-            LIMIT 1`,
+                FROM "articleauthor" 
+                WHERE articleid = $1 
+                AND iscorresponding = $2 
+                LIMIT 1`,
                 [
-                    id,
+                    req.body.id,
                     true,
                 ]
             );
@@ -191,17 +194,17 @@ router.put('/reject/',
             var rejectManuscript = await pool.query(
                 `UPDATE "article" SET status = $2 WHERE id = $1`,
                 [
-                    id,
+                    req.body.id,
                     sob.REJECTED,
                 ]
             );
 
             var title = await pool.query(
                 `SELECT title
-            FROM "article" 
-            WHERE id = $1 
-            LIMIT 1`,
-                [id]
+                FROM "article" 
+                WHERE id = $1 
+                LIMIT 1`,
+                [req.body.id]
             );
 
             res.status(200).json();
@@ -225,15 +228,15 @@ router.put('/revise/',
     checkArticleStatus,
     async (req, res) => {
         try {
-            const { id } = req.body;
+            // const { id } = req.body;
             var correspondingEmail = await pool.query(
                 `SELECT email
-            FROM "articleauthor" 
-            WHERE articleid = $1 
-            AND iscorresponding = $2 
-            LIMIT 1`,
+                FROM "articleauthor" 
+                WHERE articleid = $1 
+                AND iscorresponding = $2 
+                LIMIT 1`,
                 [
-                    id,
+                    req.body.id,
                     true,
                 ]
             );
@@ -241,17 +244,17 @@ router.put('/revise/',
             var reviseManuscript = await pool.query(
                 `UPDATE "article" SET status = $2 WHERE id = $1`,
                 [
-                    id,
+                    req.body.id,
                     sob.REVISE,
                 ]
             );
 
             var title = await pool.query(
                 `SELECT title
-            FROM "article" 
-            WHERE id = $1 
-            LIMIT 1`,
-                [id]
+                FROM "article" 
+                WHERE id = $1 
+                LIMIT 1`,
+                [req.body.id]
             );
 
             res.status(200).json();

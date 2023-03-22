@@ -14,7 +14,10 @@ async function checkRoleSubmit(req, res, next) {
     } else if (req.session.user.role == sob.MEMBER) {
       var roleUpdate = await pool.query(
         `UPDATE "account" SET roleid = $2 WHERE id = $1`,
-        [req.session.user.id, sob.AUTHOR_ID]
+        [
+          req.session.user.id,
+          sob.AUTHOR_ID
+        ]
       );
       req.session.user.role = sob.AUTHOR;
       next();
@@ -38,7 +41,7 @@ async function checkOpenAccess(req, res, next) {
       LIMIT 1`,
       [id]
     );
-    if (openAccess.rows[0].openAccess == true) {
+    if (openAccess.rows[0].openaccess == true) {
       req.session.openAccess = true;
       next();
     } else {
@@ -70,10 +73,10 @@ async function checkAccountAccess(req, res, next) {
 
         const universityTran = await pool.query(
           `SELECT U.id, U.mailtype, UT.id AS tranid, UT.expirationdate AS expirationdate, UT.isexpired AS isexpired
-            FROM "university" AS U
-            JOIN "universitytransaction" AS UT ON UT.universityid = U.id 
-            WHERE mailtype = $1
-            LIMIT 1`,
+          FROM "university" AS U
+          JOIN "universitytransaction" AS UT ON UT.universityid = U.id 
+          WHERE mailtype = $1
+          LIMIT 1`,
           [mailType]
         );
 
@@ -220,13 +223,13 @@ router.get("/", async (req, res) => {
   try {
     const list = await pool.query(
       `SELECT A.id, A.title, M.name as majorname, A.openaccess
-        FROM "article" AS A 
-        JOIN "major" AS M
-        ON A.majorid = M.id
-        WHERE A.status = $1
-        ORDER BY id
-        DESC
-        ;`,
+      FROM "article" AS A 
+      JOIN "major" AS M
+      ON A.majorid = M.id
+      WHERE A.status = $1
+      ORDER BY id
+      DESC
+      ;`,
       [sob.ACCEPTED]
     );
     if (list.rows[0]) {
@@ -262,11 +265,11 @@ router.post("/info/", async (req, res) => {
     const { id } = req.body;
     var selectedArticle = await pool.query(
       `SELECT A.id, M.name as major, A.title, A.summary, A.openaccess, A.status
-        FROM "article" AS A
-        JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.id = $1
-        LIMIT 1
-        ;`,
+      FROM "article" AS A
+      JOIN "major" AS M ON A.majorid = M.id 
+      WHERE A.id = $1
+      LIMIT 1
+      ;`,
       [id]
     );
     if (selectedArticle.rows[0]) {
@@ -301,11 +304,11 @@ router.get("/manuscript/info-file/", async (req, res) => {
     const { id } = req.body;
     var selectedManuscript = await pool.query(
       `SELECT A.id, M.name as major, A.title, A.summary, A.content, A.doc, A.openaccess, A.status
-        FROM "article" AS A
-        JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.id = $1
-        LIMIT 1
-        ;`,
+      FROM "article" AS A
+      JOIN "major" AS M ON A.majorid = M.id 
+      WHERE A.id = $1
+      LIMIT 1
+      ;`,
       [id]
     );
     if (selectedManuscript.rows[0]) {
@@ -365,7 +368,7 @@ router.post("/submit/", checkRoleSubmit, async (req, res) => {
 
     var newManuscript = await pool.query(
       `INSERT INTO "article"(title,summary,content,openaccess,creatorid,creationtime,status,majorid) 
-        VALUES($1,$2,$3,$4,$5,CURRENT_TIMESTAMP,$6,$7) RETURNING id;`,
+      VALUES($1,$2,$3,$4,$5,CURRENT_TIMESTAMP,$6,$7) RETURNING id;`,
       [
         title,
         summary,
@@ -455,9 +458,9 @@ router.post("/submit-file/", checkRoleSubmit, async (req, res) => {
     for (var x = 0; x < authorlist.length; x++) {
       var authorItem = await pool.query(
         `SELECT id, fullname, email
-          FROM "account"
-          WHERE fullname = $1
-          AND email = $2`,
+        FROM "account"
+        WHERE fullname = $1
+        AND email = $2`,
         [authorlist[x].fullname, authorlist[x].email]
       );
 
@@ -660,11 +663,11 @@ router.get("/manuscript/info/", async (req, res) => {
     const { id } = req.query;
     var selectedManuscript = await pool.query(
       `SELECT A.id, M.name AS major, M.id AS majorid, A.title, A.summary, A.content, A.doc, A.openaccess, A.status
-        FROM "article" AS A
-        JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.id = $1
-        LIMIT 1
-        ;`,
+      FROM "article" AS A
+      JOIN "major" AS M ON A.majorid = M.id 
+      WHERE A.id = $1
+      LIMIT 1
+      ;`,
       [id]
     );
 
@@ -720,11 +723,11 @@ router.post(
       var author = [];
       const review = await pool.query(
         `SELECT A.id, A.title
-          FROM "article" AS A
-          JOIN "review" AS R ON A.id = R.articleid 
-          WHERE A.status = $1 AND R.accountid = $2
-          ORDER BY id
-          DESC`,
+        FROM "article" AS A
+        JOIN "review" AS R ON A.id = R.articleid 
+        WHERE A.status = $1 AND R.accountid = $2
+        ORDER BY id
+        DESC`,
         [sob.PENDING, req.session.user.id]
       );
 
@@ -740,11 +743,11 @@ router.post(
       ) {
         const list = await pool.query(
           `SELECT A.id, M.name as major, A.title, A.content, A.doc, A.openaccess, A.status
-            FROM "article" AS A
-            JOIN "major" AS M ON A.majorid = M.id 
-            WHERE A.id = $1
-            LIMIT 1
-            ;`,
+          FROM "article" AS A
+          JOIN "major" AS M ON A.majorid = M.id 
+          WHERE A.id = $1
+          LIMIT 1
+          ;`,
           [id]
         );
         if (list.rows[0]) {
@@ -817,11 +820,11 @@ router.post("/public-file/", async (req, res) => {
     const { id } = req.body;
     const list = await pool.query(
       `SELECT A.id, M.name as major, A.title, A.content, A.doc, A.openaccess, A.status
-        FROM "article" AS A
-        JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.id = $1
-        LIMIT 1
-        ;`,
+      FROM "article" AS A
+      JOIN "major" AS M ON A.majorid = M.id 
+      WHERE A.id = $1
+      LIMIT 1
+      ;`,
       [id]
     );
     if (list.rows[0]) {
