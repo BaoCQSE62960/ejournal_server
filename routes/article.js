@@ -305,6 +305,48 @@ router.post('/info/', async (req, res) => {
   }
 });
 
+//View manuscript details (author, reviewer, editor)
+router.get("/manuscript/info-file/", async (req, res) => {
+  try {
+    const { id } = req.body;
+    var selectedManuscript = await pool.query(
+      `SELECT A.id, M.name as major, A.title, A.summary, A.content, A.doc, A.openaccess, A.status
+        FROM "article" AS A
+        JOIN "major" AS M ON A.majorid = M.id 
+        WHERE A.id = $1
+        LIMIT 1
+        ;`,
+      [id]
+    );
+    if (selectedManuscript.rows[0]) {
+      const pdfData = selectedManuscript.rows[0].doc;
+
+      var author = [];
+      for (var i = 0; i < selectedManuscript.rows.length; i++) {
+        var authorList = await pool.query(
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
+          [id]
+        );
+
+        author.push(
+          _.merge(selectedManuscript.rows[i], {
+            author: authorList.rows,
+          })
+        );
+      }
+      res.status(200).json({ article: selectedManuscript.rows });
+
+    } else {
+      res.status(400).json({ msg: "Không tìm thấy thông tin" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: "Lỗi hệ thống!" });
+  }
+});
+
 //GET Major list for submit
 router.get('/submit/major', checkRoleSubmit, async (req, res) => {
   try {
@@ -359,7 +401,6 @@ router.post('/submit/', checkRoleSubmit, async (req, res) => {
       );
 
       if (authorItem.rows[0]) {
-
         for (var i = 0; i < authorItem.rows.length; i++) {
           var detailAccountAuthor = await pool.query(
             `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
@@ -380,7 +421,6 @@ router.post('/submit/', checkRoleSubmit, async (req, res) => {
         }
 
       } else {
-
         var detailFreeAuthor = await pool.query(
           `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
           [
@@ -405,184 +445,74 @@ router.post('/submit/', checkRoleSubmit, async (req, res) => {
   }
 });
 
-//GET Major list for submit
-router.get("/submit/major", checkRoleSubmit, async (req, res) => {
-  try {
-    const list = await pool.query(`SELECT id, name
-        FROM "major"
-        ORDER BY id
-        DESC
-        ;`);
-    res.status(200).json({ list: list.rows });
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ msg: "Lỗi hệ thống!" });
-  }
-});
-
 // this apis for file
+router.post("/submit-file/", checkRoleSubmit, async (req, res) => {
+  try {
+    const { title, summary, content, doc, openaccess, majorid, authorlist } = req.body;
+    var author = [];
 
+    var newManuscript = await pool.query(
+      `INSERT INTO "article"(title,summary,content,doc,openaccess,creatorid,creationtime,status,majorid) 
+      VALUES($1,$2,$3,$4,$5,$6,CURRENT_TIMESTAMP,$7,$8) RETURNING id;`,
+      [
+        title,
+        summary,
+        content,
+        doc,
+        openaccess,
+        req.session.user.id,
+        sob.WAITING,
+        majorid,
+      ]
+    );
 
-router.post(
-  "/submit-file/",
-  checkRoleSubmit,
-
-  async (req, res) => {
-    try {
-      const { title, summary, content, doc, openaccess, majorid, authorlist } = req.body;
-
-
-      var author = [];
-
-      var newManuscript = await pool.query(
-        `INSERT INTO "article"(title,summary,content,doc,openaccess,creatorid,creationtime,status,majorid) 
-          VALUES($1,$2,$3,$4,$5,$6,CURRENT_TIMESTAMP,$7,$8) RETURNING id;`,
-        [
-          title,
-          summary,
-          content,
-          doc,
-          openaccess,
-          req.session.user.id,
-          sob.WAITING,
-          majorid,
-        ]
-      );
-
-      for (var x = 0; x < authorlist.length; x++) {
-        var authorItem = await pool.query(
-          `SELECT id, fullname, email
+    for (var x = 0; x < authorlist.length; x++) {
+      var authorItem = await pool.query(
+        `SELECT id, fullname, email
           FROM "account"
           WHERE fullname = $1
           AND email = $2`,
-          [authorlist[x].fullname, authorlist[x].email]
-        );
+        [authorlist[x].fullname, authorlist[x].email]
+      );
 
-        if (authorItem.rows[0]) {
-          for (var i = 0; i < authorItem.rows.length; i++) {
-            var detailAccountAuthor = await pool.query(
-              `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
-              [
-                newManuscript.rows[0].id,
-                authorItem.rows[i].id,
-                authorItem.rows[i].fullname,
-                authorItem.rows[i].email,
-                authorlist[x].iscorresponding,
-              ]
-            );
-
-            author.push(
-              _.merge(authorItem.rows[i], {
-                author: detailAccountAuthor.rows,
-              })
-            );
-          }
-        } else {
-          var detailFreeAuthor = await pool.query(
-            `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
+      if (authorItem.rows[0]) {
+        for (var i = 0; i < authorItem.rows.length; i++) {
+          var detailAccountAuthor = await pool.query(
+            `INSERT INTO "articleauthor"(articleId, accountId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4,$5)`,
             [
               newManuscript.rows[0].id,
-              authorlist[x].fullname,
-              authorlist[x].email,
+              authorItem.rows[i].id,
+              authorItem.rows[i].fullname,
+              authorItem.rows[i].email,
               authorlist[x].iscorresponding,
             ]
           );
 
           author.push(
             _.merge(authorItem.rows[i], {
-              author: detailFreeAuthor.rows,
+              author: detailAccountAuthor.rows,
             })
           );
         }
-      }
-      res.status(200).json();
-    } catch (error) {
-      console.log(error);
-      res.status(400).json({ msg: "Lỗi hệ thống!" });
-    }
-  }
-);
-
-//View manuscript details (author, reviewer, editor)
-router.get("/manuscript/info-file/", async (req, res) => {
-  try {
-    const { id } = req.body;
-    var selectedManuscript = await pool.query(
-      `SELECT A.id, M.name as major, A.title, A.summary, A.content, A.doc, A.openaccess, A.status
-        FROM "article" AS A
-        JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.id = $1
-        LIMIT 1
-        ;`,
-      [id]
-    );
-    if (selectedManuscript.rows[0]) {
-      const pdfData = selectedManuscript.rows[0].doc;
-
-      var author = [];
-      for (var i = 0; i < selectedManuscript.rows.length; i++) {
-        var authorList = await pool.query(
-          `SELECT fullname, email 
-          FROM "articleauthor" 
-          WHERE articleId = $1`,
-          [id]
+      } else {
+        var detailFreeAuthor = await pool.query(
+          `INSERT INTO "articleauthor"(articleId, fullname, email, iscorresponding) VALUES($1,$2,$3,$4)`,
+          [
+            newManuscript.rows[0].id,
+            authorlist[x].fullname,
+            authorlist[x].email,
+            authorlist[x].iscorresponding,
+          ]
         );
 
         author.push(
-          _.merge(selectedManuscript.rows[i], {
-            author: authorList.rows,
+          _.merge(authorItem.rows[i], {
+            author: detailFreeAuthor.rows,
           })
         );
       }
-      res.status(200).json({ article: selectedManuscript.rows });
-
-    } else {
-      res.status(400).json({ msg: "Không tìm thấy thông tin" });
     }
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ msg: "Lỗi hệ thống!" });
-  }
-});
-
-//Full text article
-//* Nếu bài viết có openaccess = true, tất cả role đều xem được
-//* User thuộc trường đại học đã trả phí và còn thời hạn
-//* User cá nhân đã trả phí để xem 1 bài báo xác định
-//* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
-//* Reviewer chỉ được xem nội dung bài báo mình đang review
-router.post("/public-file/", async (req, res) => {
-  try {
-    const { id } = req.body;
-    const list = await pool.query(
-      `SELECT A.id, M.name as major, A.title, A.content, A.doc, A.openaccess, A.status
-        FROM "article" AS A
-        JOIN "major" AS M ON A.majorid = M.id 
-        WHERE A.id = $1
-        LIMIT 1
-        ;`,
-      [id]
-    );
-    if (list.rows[0]) {
-      var author = [];
-
-      for (var i = 0; i < list.rows.length; i++) {
-        var authorList = await pool.query(
-          `SELECT fullname, email 
-          FROM "articleauthor" 
-          WHERE articleId = $1`,
-          [id]
-        );
-        author.push(
-          _.merge(list.rows[i], {
-            author: authorList.rows,
-          })
-        );
-      }
-      res.status(200).json(list.rows);
-    } else {
-      res.status(400).json({ msg: "Không tìm thấy thông tin" });
-    }
+    res.status(200).json();
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: "Lỗi hệ thống!" });
@@ -602,7 +532,6 @@ router.put('/manuscript/update/',
   async (req, res) => {
     try {
       var author = [];
-
       var selectedManuscript = await pool.query(
         `UPDATE "article" 
         SET title = $2, 
@@ -694,7 +623,8 @@ router.put('/manuscript/update/',
       console.log(error);
       res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-  });
+  }
+);
 
 //Delete manuscript (author)
 //* chỉ cho phép xóa bản thảo khi chưa được assign reviewer
@@ -746,7 +676,7 @@ router.get('/manuscript/info/', async (req, res) => {
     const { id } = req.query;
     var selectedManuscript =
       await pool.query(
-        `SELECT A.id, M.name as major, A.title, A.summary, A.content, A.doc, A.openaccess, A.status
+        `SELECT A.id, M.name AS major, M.id AS majorid, A.title, A.summary, A.content, A.doc, A.openaccess, A.status
         FROM "article" AS A
         JOIN "major" AS M ON A.majorid = M.id 
         WHERE A.id = $1
@@ -754,7 +684,7 @@ router.get('/manuscript/info/', async (req, res) => {
         ;`,
         [id]
       );
-      
+
     if (selectedManuscript.rows[0]) {
       var author = [];
       for (var i = 0; i < selectedManuscript.rows.length; i++) {
@@ -806,6 +736,7 @@ router.get('/public/',
           req.session.user.id
         ]
       );
+
       var author = [];
       const review =
         await pool.query(`SELECT A.id, A.title
@@ -894,6 +825,46 @@ router.get('/public/',
       console.log(error);
       res.status(400).json({ msg: 'Lỗi hệ thống!' });
     }
-  });
+  }
+);
+
+//Full text article for file
+router.post("/public-file/", async (req, res) => {
+  try {
+    const { id } = req.body;
+    const list = await pool.query(
+      `SELECT A.id, M.name as major, A.title, A.content, A.doc, A.openaccess, A.status
+        FROM "article" AS A
+        JOIN "major" AS M ON A.majorid = M.id 
+        WHERE A.id = $1
+        LIMIT 1
+        ;`,
+      [id]
+    );
+    if (list.rows[0]) {
+      var author = [];
+
+      for (var i = 0; i < list.rows.length; i++) {
+        var authorList = await pool.query(
+          `SELECT fullname, email 
+          FROM "articleauthor" 
+          WHERE articleId = $1`,
+          [id]
+        );
+        author.push(
+          _.merge(list.rows[i], {
+            author: authorList.rows,
+          })
+        );
+      }
+      res.status(200).json(list.rows);
+    } else {
+      res.status(400).json({ msg: "Không tìm thấy thông tin" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: "Lỗi hệ thống!" });
+  }
+});
 
 module.exports = router;
