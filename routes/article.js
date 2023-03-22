@@ -583,12 +583,12 @@ router.post("/public-file/", async (req, res) => {
 email và fullname, hệ thống sẽ tự động thêm accountId tương ứng */
 router.put('/manuscript/update/',
   checkRoleAuthor,
-  checkCorresponding,
+  checkCorrespondingWithParams,
   checkArticleStatus,
   async (req, res) => {
     try {
       var author = [];
-
+      const {id} = req.query;
       var selectedManuscript = await pool.query(
         `UPDATE "article" 
         SET title = $2, 
@@ -600,7 +600,7 @@ router.put('/manuscript/update/',
         status = $8 
         WHERE id = $1`,
         [
-          req.body.id,
+          id,
           req.body.title,
           req.body.summary,
           req.body.content,
