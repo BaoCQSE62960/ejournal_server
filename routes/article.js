@@ -798,12 +798,12 @@ router.post(
         req.session.openAccess == false &&
         req.session.universityTran == null
       ) {
-        res.status(400).json({ msg: "payment screen" });
+        res.status(200).json({ msg: "payment screen" });
       } else if (
         req.session.openAccess == false &&
         req.session.personalTran == null
       ) {
-        res.status(400).json({ msg: "payment screen" });
+        res.status(200).json({ msg: "payment screen" });
       } else {
         res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
       }
