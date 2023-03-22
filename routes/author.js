@@ -79,16 +79,16 @@ router.get('/manuscript/', checkCorresponding, async (req, res) => {
   try {
     const list =
       await pool.query(`SELECT J.id, J.title, M.name as majorname
-          FROM "article" AS J 
-          JOIN "articleauthor" AS A
-          ON J.id = A.articleid
-          JOIN "major" AS M
-          ON J.majorid = M.id
-          WHERE J.status != 'ACCEPTED' 
-          AND A.accountid = $1
-          ORDER BY id
-          DESC;`,
-          [req.session.user.id]
+        FROM "article" AS J 
+        JOIN "articleauthor" AS A
+        ON J.id = A.articleid
+        JOIN "major" AS M
+        ON J.majorid = M.id
+        WHERE J.status != 'ACCEPTED' 
+        AND A.accountid = $1
+        ORDER BY id
+        DESC;`,
+        [req.session.user.id]
       );
     if (list.rows[0]) {
       res.status(200).json({ list: list.rows });
