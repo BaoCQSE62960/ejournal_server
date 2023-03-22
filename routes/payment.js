@@ -232,24 +232,26 @@ router.get('/unicorresponding/', checkUniversity, async (req, res) => {
         [universityInformation.rows[0].id]
       );
 
-    if (paymentinfo.rows[0].expirationdate > Date.now()) {
-      var universityTranUpdate = await pool.query(
-        `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
-        [
-          paymentinfo.rows[0].id,
-          false
-        ]
-      );
-      paymentinfo.rows[0].isexpired = false;
-    } else if (paymentinfo.rows[0].expirationdate <= Date.now()) {
-      var universityTranUpdate = await pool.query(
-        `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
-        [
-          paymentinfo.rows[0].id,
-          true
-        ]
-      );
-      paymentinfo.rows[0].isexpired = true;
+    if (paymentinfo.rows[0]) {
+      if (paymentinfo.rows[0].expirationdate > Date.now()) {
+        var universityTranUpdate = await pool.query(
+          `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
+          [
+            paymentinfo.rows[0].id,
+            false
+          ]
+        );
+        paymentinfo.rows[0].isexpired = false;
+      } else if (paymentinfo.rows[0].expirationdate <= Date.now()) {
+        var universityTranUpdate = await pool.query(
+          `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
+          [
+            paymentinfo.rows[0].id,
+            true
+          ]
+        );
+        paymentinfo.rows[0].isexpired = true;
+      }
     } else {
       res.status(200).json("Không có thông tin thanh toán");
     }
