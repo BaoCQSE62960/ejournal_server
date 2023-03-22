@@ -72,7 +72,7 @@ router.get("/article/", checkRoleAuthor, async (req, res) => {
 router.get("/manuscript/", checkCorresponding, async (req, res) => {
   try {
     const list = await pool.query(
-      `SELECT J.id, J.title, M.name as majorname
+      `SELECT J.id, J.title, M.name as majorname, J.openaccess
           FROM "article" AS J 
           JOIN "articleauthor" AS A
           ON J.id = A.articleid
