@@ -130,8 +130,8 @@ async function checkRoleAuthor(req, res, next) {
 
 async function checkCorresponding(req, res, next) {
   try {
-    const { id , title, summary, content, openaccess, majorid, authorlist } = req.body;
-    
+    const { id, title, summary, content, openaccess, majorid, authorlist } = req.body;
+
     const correspondingAuthor = await pool.query(
       `SELECT AA.id, AA.articleid, AA.accountid, A.fullname AS fullname, A.email AS email, M.status AS status, AA.iscorresponding
       FROM "articleauthor" AS AA 
@@ -161,10 +161,11 @@ async function checkCorresponding(req, res, next) {
     res.status(400).json({ msg: 'Lỗi hệ thống' });
   }
 }
+
 async function checkCorrespondingWithParams(req, res, next) {
   try {
-    const {  title, summary, content, openaccess, majorid, authorlist } = req.body;
-    const { id } = req.query; 
+    const { title, summary, content, openaccess, majorid, authorlist } = req.body;
+    const { id } = req.query;
     const correspondingAuthor = await pool.query(
       `SELECT AA.id, AA.articleid, AA.accountid, A.fullname AS fullname, A.email AS email, M.status AS status, AA.iscorresponding
       FROM "articleauthor" AS AA 
@@ -199,6 +200,19 @@ async function checkArticleStatus(req, res, next) {
   try {
     if ((req.session.article.status == sob.WAITING)
       || req.session.article.status == sob.REVISE) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Bài báo đang được xử lí` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
+async function checkArticleStatusForDelete(req, res, next) {
+  try {
+    if (req.session.article.status == sob.WAITING) {
       next();
     } else {
       res.status(400).json({ msg: `Bài báo đang được xử lí` });
@@ -412,12 +426,12 @@ router.get("/submit/major", checkRoleSubmit, async (req, res) => {
 router.post(
   "/submit-file/",
   checkRoleSubmit,
-  
+
   async (req, res) => {
     try {
-      const {title, summary, content, doc, openaccess, majorid, authorlist } = req.body;
-      
-      
+      const { title, summary, content, doc, openaccess, majorid, authorlist } = req.body;
+
+
       var author = [];
 
       var newManuscript = await pool.query(
@@ -521,7 +535,7 @@ router.get("/manuscript/info-file/", async (req, res) => {
         );
       }
       res.status(200).json({ article: selectedManuscript.rows });
-      
+
     } else {
       res.status(400).json({ msg: "Không tìm thấy thông tin" });
     }
@@ -689,7 +703,7 @@ router.put('/manuscript/update/',
 router.delete('/manuscript/delete/',
   checkRoleAuthor,
   checkCorrespondingWithParams,
-  checkArticleStatus,
+  checkArticleStatusForDelete,
   async (req, res) => {
     try {
       const { id } = req.query;
@@ -740,6 +754,7 @@ router.get('/manuscript/info/', async (req, res) => {
         ;`,
         [id]
       );
+      
     if (selectedManuscript.rows[0]) {
       var author = [];
       for (var i = 0; i < selectedManuscript.rows.length; i++) {
