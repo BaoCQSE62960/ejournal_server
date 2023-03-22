@@ -130,7 +130,41 @@ async function checkRoleAuthor(req, res, next) {
 
 async function checkCorresponding(req, res, next) {
   try {
-    const { id, title, summary, content, openaccess, majorid, authorlist } = req.body;
+    const { id , title, summary, content, openaccess, majorid, authorlist } = req.body;
+    
+    const correspondingAuthor = await pool.query(
+      `SELECT AA.id, AA.articleid, AA.accountid, A.fullname AS fullname, A.email AS email, M.status AS status, AA.iscorresponding
+      FROM "articleauthor" AS AA 
+      JOIN "account" AS A 
+      ON A.id = AA.accountid 
+      JOIN "article" AS M 
+      ON M.id = AA.articleid 
+      WHERE AA.articleid = $1 
+      AND AA.accountid = $2 
+      LIMIT 1`,
+      [
+        id,
+        req.session.user.id
+      ]
+    );
+    if (correspondingAuthor.rows[0].iscorresponding == true) {
+      req.session.article = correspondingAuthor.rows[0];
+      next();
+    } else if (correspondingAuthor.rows[0].iscorresponding == false) {
+      req.session.article = correspondingAuthor.rows[0];
+      res.status(400).json({ msg: `Vai trò của tác giả không phù hợp` });
+    } else {
+      res.status(200).json({ msg: `Xóa bản thảo thành công` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+async function checkCorrespondingWithParams(req, res, next) {
+  try {
+    const {  title, summary, content, openaccess, majorid, authorlist } = req.body;
+    const { id } = req.query; 
     const correspondingAuthor = await pool.query(
       `SELECT AA.id, AA.articleid, AA.accountid, A.fullname AS fullname, A.email AS email, M.status AS status, AA.iscorresponding
       FROM "articleauthor" AS AA 
@@ -654,11 +688,11 @@ router.put('/manuscript/update/',
 //Done nếu tác giả không còn bài báo trong hệ thống, role sẽ được đổi thành MEMBER
 router.delete('/manuscript/delete/',
   checkRoleAuthor,
-  checkCorresponding,
+  checkCorrespondingWithParams,
   checkArticleStatus,
   async (req, res) => {
     try {
-      const { id } = req.body;
+      const { id } = req.query;
 
       var deleteAuthor = await pool.query(
         `DELETE FROM "articleauthor" WHERE articleId = $1`,
@@ -695,7 +729,7 @@ router.delete('/manuscript/delete/',
 //View manuscript details (author, reviewer, editor)
 router.get('/manuscript/info/', async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.query;
     var selectedManuscript =
       await pool.query(
         `SELECT A.id, M.name as major, A.title, A.summary, A.content, A.doc, A.openaccess, A.status

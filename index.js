@@ -102,7 +102,7 @@ server.listen(PORT, () => {
 
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('ejournal', 'postgres', '123', {
+const sequelize = new Sequelize('ejournal', 'postgres', '54321', {
   host: 'localhost',
   dialect: "postgres",
 });
