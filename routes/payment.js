@@ -252,11 +252,10 @@ router.get('/unicorresponding/', checkUniversity, async (req, res) => {
         );
         paymentinfo.rows[0].isexpired = true;
       }
+      res.status(200).json(paymentinfo.rows[0]);
     } else {
       res.status(200).json("Không có thông tin thanh toán");
     }
-
-    res.status(200).json(paymentinfo.rows[0]);
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
