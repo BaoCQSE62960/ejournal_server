@@ -527,12 +527,12 @@ router.post("/submit-file/", checkRoleSubmit, async (req, res) => {
 email và fullname, hệ thống sẽ tự động thêm accountId tương ứng */
 router.put('/manuscript/update/',
   checkRoleAuthor,
-  checkCorrespondingWithParams,
+  checkCorresponding,
   checkArticleStatus,
   async (req, res) => {
     try {
       var author = [];
-      const {id} = req.query;
+      const {id} = req.body;
       var selectedManuscript = await pool.query(
         `UPDATE "article" 
         SET title = $2, 
