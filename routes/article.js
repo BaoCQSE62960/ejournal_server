@@ -198,7 +198,7 @@ async function checkCorrespondingWithParams(req, res, next) {
 
 async function checkArticleStatus(req, res, next) {
   try {
-    if ((req.session.article.status == sob.WAITING)
+    if (req.session.article.status == sob.WAITING
       || req.session.article.status == sob.REVISE) {
       next();
     } else {
@@ -527,15 +527,11 @@ router.post("/submit-file/", checkRoleSubmit, async (req, res) => {
 email và fullname, hệ thống sẽ tự động thêm accountId tương ứng */
 router.put('/manuscript/update/',
   checkRoleAuthor,
-  checkCorrespondingWithParams,
+  checkCorresponding,
   checkArticleStatus,
   async (req, res) => {
     try {
       var author = [];
-<<<<<<< HEAD
-      const {id} = req.query;
-=======
->>>>>>> f58588e3839ebacce88eedb88105ceb606cf8b88
       var selectedManuscript = await pool.query(
         `UPDATE "article" 
         SET title = $2, 
@@ -723,7 +719,8 @@ router.get('/manuscript/info/', async (req, res) => {
 //* User cá nhân đã trả phí để xem 1 bài báo xác định
 //* Author của bài báo và Editor được toàn quyền xem nội dung bài báo
 //* Reviewer chỉ được xem nội dung bài báo mình đang review
-router.get('/public/',
+// #GET -> POST
+router.post('/public/',
   checkOpenAccess,
   checkAccountAccess,
   async (req, res) => {
