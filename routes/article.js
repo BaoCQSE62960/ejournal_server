@@ -532,10 +532,7 @@ router.put('/manuscript/update/',
   async (req, res) => {
     try {
       var author = [];
-<<<<<<< HEAD
       const {id} = req.query;
-=======
->>>>>>> f58588e3839ebacce88eedb88105ceb606cf8b88
       var selectedManuscript = await pool.query(
         `UPDATE "article" 
         SET title = $2, 
