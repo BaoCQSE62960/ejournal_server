@@ -1,7 +1,7 @@
-const { Router } = require('express');
+const { Router } = require("express");
 const router = Router();
-const pool = require('../db');
-const sob = require('../staticObj');
+const pool = require("../db");
+const sob = require("../staticObj");
 
 async function checkRoleAuthor(req, res, next) {
   try {
@@ -12,7 +12,7 @@ async function checkRoleAuthor(req, res, next) {
     }
   } catch (error) {
     console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống' });
+    res.status(400).json({ msg: "Lỗi hệ thống" });
   }
 }
 
@@ -26,10 +26,7 @@ async function checkCorresponding(req, res, next) {
       WHERE A.accountid = $1 
       AND A.iscorresponding = $2 
       LIMIT 1`,
-      [
-        req.session.user.id,
-        true
-      ]
+      [req.session.user.id, true]
     );
     if (correspondingAuthor.rows[0]) {
       req.session.article = correspondingAuthor.rows[0];
@@ -39,15 +36,15 @@ async function checkCorresponding(req, res, next) {
     }
   } catch (error) {
     console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống' });
+    res.status(400).json({ msg: "Lỗi hệ thống" });
   }
 }
 
 //GET Personal article list
-router.get('/article/', checkRoleAuthor, async (req, res) => {
+router.get("/article/", checkRoleAuthor, async (req, res) => {
   try {
-    const list =
-      await pool.query(`SELECT J.id, J.title, M.name as majorname
+    const list = await pool.query(
+      `SELECT J.id, J.title, M.name as majorname
         FROM "article" AS J 
         JOIN "articleauthor" AS A
         ON J.id = A.articleid
@@ -58,46 +55,43 @@ router.get('/article/', checkRoleAuthor, async (req, res) => {
         ORDER BY id
         DESC
         ;`,
-        [
-          sob.ACCEPTED,
-          req.session.user.id
-        ]
-      );
+      [sob.ACCEPTED, req.session.user.id]
+    );
     if (list.rows[0]) {
       res.status(200).json({ list: list.rows });
     } else {
-      res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+      res.status(400).json({ msg: "Không tìm thấy thông tin" });
     }
   } catch (error) {
     console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+    res.status(400).json({ msg: "Lỗi hệ thống!" });
   }
 });
 
 //GET Personal manuscript list
-router.get('/manuscript/', checkCorresponding, async (req, res) => {
+router.get("/manuscript/", checkCorresponding, async (req, res) => {
   try {
-    const list =
-      await pool.query(`SELECT J.id, J.title, M.name as majorname
+    const list = await pool.query(
+      `SELECT J.id, J.title, M.name as majorname
           FROM "article" AS J 
           JOIN "articleauthor" AS A
           ON J.id = A.articleid
           JOIN "major" AS M
           ON J.majorid = M.id
           WHERE J.status != 'ACCEPTED' 
-          AND A.accountid = $1
+          AND A.accountid = $1 AND A.iscorresponding = $2
           ORDER BY id
           DESC;`,
-          [req.session.user.id]
-      );
+      [req.session.user.id, true]
+    );
     if (list.rows[0]) {
       res.status(200).json({ list: list.rows });
     } else {
-      res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+      res.status(400).json({ msg: "Không tìm thấy thông tin" });
     }
   } catch (error) {
     console.log(error);
-    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+    res.status(400).json({ msg: "Lỗi hệ thống!" });
   }
 });
 

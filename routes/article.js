@@ -144,9 +144,12 @@ async function checkCorresponding(req, res, next) {
       LIMIT 1`,
       [
         id,
-        req.session.user.id
+        req.session.user.id 
+        
       ]
+      
     );
+    console.log(req.session.user.id);
     if (correspondingAuthor.rows[0].iscorresponding == true) {
       req.session.article = correspondingAuthor.rows[0];
       next();
@@ -161,6 +164,7 @@ async function checkCorresponding(req, res, next) {
     res.status(400).json({ msg: 'Lỗi hệ thống' });
   }
 }
+
 
 async function checkCorrespondingWithParams(req, res, next) {
   try {
@@ -554,7 +558,7 @@ router.put('/manuscript/update/',
           sob.WAITING
         ]
       );
-
+       
       for (var i = 0; i < req.body.authorlist.length; i++) {
         var deleteAuthor = await pool.query(
           `DELETE FROM "articleauthor" 
@@ -571,7 +575,7 @@ router.put('/manuscript/update/',
           `SELECT id, fullname, email
           FROM "account" 
           WHERE fullname = $1 
-          AND email = $2`,
+          AND email = $2` ,
           [
             req.body.authorlist[x].fullname,
             req.body.authorlist[x].email
