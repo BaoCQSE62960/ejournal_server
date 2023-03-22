@@ -31,8 +31,7 @@ async function checkPersonal(req, res, next) {
 
 async function checkUniversity(req, res, next) {
   try {
-    if (req.session.user.accesstype == sob.UNIVERSITY &&
-      (req.session.user.role == sob.MEMBER || req.session.user.role == sob.AUTHOR)) {
+    if (req.session.user.accesstype == sob.UNIVERSITY) {
       next();
     } else {
       res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
@@ -215,7 +214,7 @@ router.get('/universitypayment/:id', checkRoleAdmin, async (req, res) => {
 });
 
 //Get university payment detail for corresponding user
-router.get('/universitypayment/corresponding/', checkUniversity, async (req, res) => {
+router.get('/unicorresponding/', checkUniversity, async (req, res) => {
   try {
     const universityInformation = await pool.query(
       `SELECT id FROM "university" WHERE email = $1 LIMIT 1`,
@@ -225,11 +224,32 @@ router.get('/universitypayment/corresponding/', checkUniversity, async (req, res
     const paymentinfo =
       await pool.query(`SELECT *
         FROM "universitytransaction"
-        WHERE id = $1
+        WHERE universityid = $1
         LIMIT 1
         ;`,
         [universityInformation.rows[0].id]
       );
+
+    if (paymentinfo.rows[0].expirationdate > Date.now()) {
+      var universityTranUpdate = await pool.query(
+        `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
+        [
+          paymentinfo.rows[0].id,
+          false
+        ]
+      );
+      paymentinfo.rows[0].isexpired = false;
+    } else {
+      var universityTranUpdate = await pool.query(
+        `UPDATE "universitytransaction" SET isexpired = $2 WHERE id = $1`,
+        [
+          paymentinfo.rows[0].id,
+          true
+        ]
+      );
+      paymentinfo.rows[0].isexpired = true;
+    }
+
     res.status(200).json(paymentinfo.rows[0]);
   } catch (error) {
     console.log(error);
