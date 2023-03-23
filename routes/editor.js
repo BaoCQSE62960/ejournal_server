@@ -85,23 +85,24 @@ router.get('/manuscript/',
     async (req, res) => {
         try {
             const list = await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
-            FROM "article" AS J 
-            JOIN "major" AS M
-            ON J.majorid = M.id
-            WHERE J.status != $1
-            ORDER BY id
-            DESC
-            ;`,
+                FROM "article" AS J 
+                JOIN "major" AS M
+                ON J.majorid = M.id
+                WHERE J.status != $1
+                ORDER BY id
+                DESC
+                ;`,
                 [sob.ACCEPTED]
             );
+
             if (list.rows[0]) {
                 var author = [];
 
                 for (var i = 0; i < list.rows.length; i++) {
                     var authorList = await pool.query(
                         `SELECT fullname, email 
-                    FROM "articleauthor" 
-                    WHERE articleId = $1`,
+                        FROM "articleauthor" 
+                        WHERE articleId = $1`,
                         [list.rows[i].id]
                     );
 
@@ -128,17 +129,8 @@ router.put('/accept/',
     checkArticleStatus,
     async (req, res) => {
         try {
-            // const { id } = req.body;
-            var correspondingEmail = await pool.query(
-                `SELECT email
-                FROM "articleauthor" 
-                WHERE articleid = $1 
-                AND iscorresponding = $2 
-                LIMIT 1`,
-                [
-                    req.body.id,
-                    true,
-                ]
+            var authorEmail = await pool.query(`SELECT email FROM "articleauthor" WHERE articleid = $1`,
+                [req.body.id]
             );
 
             var acceptManuscript = await pool.query(
@@ -160,10 +152,12 @@ router.put('/accept/',
             res.status(200).json();
 
             if (res.status(200)) {
-                sendEmail(req, res,
-                    correspondingEmail.rows[0].email,
-                    sob.ACCEPT_MAIL_TITLE,
-                    sob.ACCEPT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+                for (var i = 0; i < authorEmail.rows.length; i++) {
+                    sendEmail(req, res,
+                        authorEmail.rows[i].email,
+                        sob.ACCEPT_MAIL_TITLE,
+                        sob.ACCEPT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+                }
             }
         } catch (error) {
             console.log(error);
@@ -178,17 +172,8 @@ router.put('/reject/',
     checkArticleStatus,
     async (req, res) => {
         try {
-            // const { id } = req.body;
-            var correspondingEmail = await pool.query(
-                `SELECT email
-                FROM "articleauthor" 
-                WHERE articleid = $1 
-                AND iscorresponding = $2 
-                LIMIT 1`,
-                [
-                    req.body.id,
-                    true,
-                ]
+            var authorEmail = await pool.query(`SELECT email FROM "articleauthor" WHERE articleid = $1`,
+                [req.body.id]
             );
 
             var rejectManuscript = await pool.query(
@@ -210,10 +195,12 @@ router.put('/reject/',
             res.status(200).json();
 
             if (res.status(200)) {
-                sendEmail(req, res,
-                    correspondingEmail.rows[0].email,
-                    sob.REJECT_MAIL_TITLE,
-                    sob.REJECT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+                for (var i = 0; i < authorEmail.rows.length; i++) {
+                    sendEmail(req, res,
+                        authorEmail.rows[i].email,
+                        sob.ACCEPT_MAIL_TITLE,
+                        sob.ACCEPT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+                }
             }
         } catch (error) {
             console.log(error);
@@ -228,17 +215,8 @@ router.put('/revise/',
     checkArticleStatus,
     async (req, res) => {
         try {
-            // const { id } = req.body;
-            var correspondingEmail = await pool.query(
-                `SELECT email
-                FROM "articleauthor" 
-                WHERE articleid = $1 
-                AND iscorresponding = $2 
-                LIMIT 1`,
-                [
-                    req.body.id,
-                    true,
-                ]
+            var authorEmail = await pool.query(`SELECT email FROM "articleauthor" WHERE articleid = $1`,
+                [req.body.id]
             );
 
             var reviseManuscript = await pool.query(
@@ -260,10 +238,12 @@ router.put('/revise/',
             res.status(200).json();
 
             if (res.status(200)) {
-                sendEmail(req, res,
-                    correspondingEmail.rows[0].email,
-                    sob.REVISE_MAIL_TITLE,
-                    sob.REVISE_FIRST_MAIL_CONTENT + title.rows[0].title + sob.REVISE_LAST_MAIL_CONTENT);
+                for (var i = 0; i < authorEmail.rows.length; i++) {
+                    sendEmail(req, res,
+                        authorEmail.rows[i].email,
+                        sob.ACCEPT_MAIL_TITLE,
+                        sob.ACCEPT_MAIL_CONTENT + title.rows[0].title + sob.LAST_MINE_MAIL_CONTENT);
+                }
             }
         } catch (error) {
             console.log(error);

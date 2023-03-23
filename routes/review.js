@@ -209,24 +209,19 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
       );
     }
 
-    var correspondingEmail = await pool.query(
-      `SELECT email
-      FROM "articleauthor" 
-      WHERE articleid = $1 
-      AND iscorresponding = $2 
-      LIMIT 1`,
-      [
-        articleid,
-        true,
-      ]
+    var authorEmail = await pool.query(`SELECT email FROM "articleauthor" WHERE articleid = $1`,
+      [articleid]
     );
+
     res.status(200).json({ msg: 'Gửi review thành công' });
 
     if (res.status(200)) {
-      sendEmail(req, res,
-        correspondingEmail.rows[0].email,
-        sob.REVIEWED_MAIL_TITLE,
-        sob.REVIEWED_MAIL_CONTENT + content);
+      for (var i = 0; i < authorEmail.rows.length; i++) {
+        sendEmail(req, res,
+          authorEmail.rows[i].email,
+          sob.REVIEWED_MAIL_TITLE,
+          sob.REVIEWED_MAIL_CONTENT + content);
+      }
     }
   } catch (error) {
     console.log(error);
