@@ -49,7 +49,7 @@ router.post('/submitpersonal/', checkPersonal, async (req, res) => {
     const { articleid, amount } = req.body;
     var paymentinfo =
       await pool.query(`INSERT INTO "personaltransaction"(articleid, accountid, amount, creatorid, creationtime) 
-          VALUES($1,$2,$3,$4,CURRENT_TIMESTAMP)`,
+        VALUES($1,$2,$3,$4,CURRENT_TIMESTAMP)`,
         [
           articleid,
           accountid,
@@ -182,8 +182,10 @@ router.get('/personalpayment/:id', checkRoleAdmin, async (req, res) => {
     // const accountid = req.session.user.id;
     const { id } = req.params;
     const payment =
-      await pool.query(`SELECT *
-        FROM "personaltransaction"
+      await pool.query(`SELECT PT.amount, PT.creationtime, A.title AS title, U.fullname AS fullname, A.openaccess AS type
+        FROM "personaltransaction" AS PT
+        JOIN "article" AS A ON A.id = PT.articleid 
+        JOIN "account" AS U ON U.id = PT.accountid 
         WHERE id = $1
         LIMIT 1
         ;`,

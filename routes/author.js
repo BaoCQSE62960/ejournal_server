@@ -44,18 +44,23 @@ async function checkCorresponding(req, res, next) {
 router.get("/article/", checkRoleAuthor, async (req, res) => {
   try {
     const list = await pool.query(
-      `SELECT J.id, J.title, M.name as majorname
-        FROM "article" AS J 
-        JOIN "articleauthor" AS A
-        ON J.id = A.articleid
-        JOIN "major" AS M
-        ON J.majorid = M.id
-        WHERE J.status = $1 
-        AND A.accountid = $2
-        ORDER BY id
-        DESC
-        ;`,
-      [sob.ACCEPTED, req.session.user.id]
+      `SELECT J.id, J.title, M.name as majorname, J.status
+      FROM "article" AS J 
+      JOIN "articleauthor" AS A
+      ON J.id = A.articleid
+      JOIN "major" AS M
+      ON J.majorid = M.id
+      WHERE J.status = $1 
+      OR J.status = $2
+      AND A.accountid = $3
+      ORDER BY id
+      DESC
+      ;`,
+      [
+        sob.PUBLIC,
+        sob.RESTRICTED,
+        req.session.user.id
+      ]
     );
     if (list.rows[0]) {
       res.status(200).json({ list: list.rows });
@@ -73,16 +78,23 @@ router.get("/manuscript/", checkCorresponding, async (req, res) => {
   try {
     const list = await pool.query(
       `SELECT J.id, J.title, M.name as majorname, J.openaccess
-          FROM "article" AS J 
-          JOIN "articleauthor" AS A
-          ON J.id = A.articleid
-          JOIN "major" AS M
-          ON J.majorid = M.id
-          WHERE J.status != 'ACCEPTED' 
-          AND A.accountid = $1 AND A.iscorresponding = $2
-          ORDER BY id
-          DESC;`,
-      [req.session.user.id, true]
+      FROM "article" AS J 
+      JOIN "articleauthor" AS A
+      ON J.id = A.articleid
+      JOIN "major" AS M
+      ON J.majorid = M.id
+      WHERE J.status != $3 
+      AND J.status != $4 
+      AND A.accountid = $1 
+      AND A.iscorresponding = $2
+      ORDER BY id
+      DESC;`,
+      [
+        req.session.user.id,
+        true,
+        sob.PUBLIC,
+        sob.RESTRICTED
+      ]
     );
     if (list.rows[0]) {
       res.status(200).json({ list: list.rows });

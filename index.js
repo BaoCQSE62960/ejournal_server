@@ -41,7 +41,7 @@ const knex = Knex({
   connection: {
     host: '127.0.0.1',
     user: 'postgres',
-    password: '54321',
+    password: '123',
     database: 'ejournal',
   },
 });
@@ -102,7 +102,7 @@ server.listen(PORT, () => {
 
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('ejournal', 'postgres', '54321', {
+const sequelize = new Sequelize('ejournal', 'postgres', '123', {
   host: 'localhost',
   dialect: "postgres",
 });
