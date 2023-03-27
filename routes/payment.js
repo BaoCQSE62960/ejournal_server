@@ -124,15 +124,17 @@ router.put('/updateuniversity/', checkUniversity, async (req, res) => {
 //Get list payment of current account
 router.get('/mypayment/', checkPersonal, async (req, res) => {
   try {
-    const list =
-      await pool.query(`SELECT id, articleid, amount, creationtime
-        FROM "personaltransaction"
-        WHERE accountid = $1
-        ORDER BY id
-        DESC
-        ;`,
-        [req.session.user.id]
-      );
+    const list = await pool.query(
+      `SELECT PT.id, PT.articleid, PT.amount, PT.creationtime, A.title AS title, U.fullname AS fullname, A.openaccess AS type
+      FROM "personaltransaction" AS PT
+      JOIN "article" AS A ON A.id = PT.articleid 
+      JOIN "account" AS U ON U.id = PT.accountid 
+      WHERE accountid = $1
+      ORDER BY id
+      DESC
+      ;`,
+      [req.session.user.id]
+    );
     res.status(200).json({ list: list.rows });
   } catch (error) {
     console.log(error);
