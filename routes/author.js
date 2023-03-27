@@ -51,6 +51,7 @@ router.get("/article/", checkRoleAuthor, async (req, res) => {
       JOIN "major" AS M
       ON J.majorid = M.id
       WHERE J.status = $1 
+      AND A.accountid = $3
       OR J.status = $2
       AND A.accountid = $3
       ORDER BY id
