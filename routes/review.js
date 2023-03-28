@@ -75,38 +75,61 @@ async function checkRoleReviewer(req, res, next) {
   }
 }
 
-//Assign reviewer (editor)
-router.post('/assign/', checkRoleEditor, async (req, res) => {
+async function checkArticleStatus(req, res, next) {
   try {
-    const creatorid = req.session.user.id;
-    const { articleid, reviewerid } = req.body;
+    const { articleid } = req.body;
+    var manuscript = await pool.query(
+      `SELECT status FROM "article" WHERE id = $1 LIMIT 1`,
+      [articleid]
+    );
 
-    const statusArticle =
-      await pool.query(`UPDATE "article" 
-        SET status = $2 
-        WHERE id = $1`,
-        [
-          articleid,
-          sob.PENDING
-        ]
-      );
-
-    var createReview =
-      await pool.query(`INSERT INTO "review"(articleid, accountid, creatorid, creationtime) 
-        VALUES($1,$2,$3,CURRENT_TIMESTAMP) RETURNING id;`,
-        [
-          articleid,
-          reviewerid,
-          creatorid
-        ]
-      );
-
-    res.status(200).json({ msg: "Assign thành công" });
+    if (manuscript.rows[0].status == sob.WAITING) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Thao tác không hợp lệ` });
+    }
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống' });
   }
-});
+}
+
+//Assign reviewer (editor)
+router.post('/assign/',
+  checkRoleEditor,
+  checkArticleStatus,
+  async (req, res) => {
+    try {
+      const creatorid = req.session.user.id;
+      const { articleid, reviewerid } = req.body;
+
+      const statusArticle =
+        await pool.query(`UPDATE "article" 
+          SET status = $2 
+          WHERE id = $1`,
+          [
+            articleid,
+            sob.PENDING
+          ]
+        );
+
+      var createReview =
+        await pool.query(`INSERT INTO "review"(articleid, accountid, creatorid, creationtime) 
+          VALUES($1,$2,$3,CURRENT_TIMESTAMP) RETURNING id;`,
+          [
+            articleid,
+            reviewerid,
+            creatorid
+          ]
+        );
+
+      res.status(200).json({ msg: "Assign thành công" });
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({ msg: 'Lỗi hệ thống' });
+    }
+  }
+);
 
 //GET reviewer list
 router.get('/listreviewers/', checkRoleEditor, async (req, res) => {
