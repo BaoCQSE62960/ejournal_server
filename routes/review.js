@@ -253,7 +253,7 @@ router.put('/submit/', checkRoleReviewer, async (req, res) => {
 });
 
 //view personal review (reviewer)
-router.get('/reviews/', checkRoleReviewer, async (req, res) => {
+router.post('/reviews/', checkRoleReviewer, async (req, res) => {
   try {
     const userId = req.session.user.id;
     const { articleid } = req.body;
@@ -281,7 +281,7 @@ router.get('/articlereviewed/', checkRoleReviewer, async (req, res) => {
     const userId = req.session.user.id;
 
     const list =
-      await pool.query(`SELECT A.title, M.name AS major, A.status, R.suggest
+      await pool.query(`SELECT A.id, A.title, M.name AS major, A.status, R.suggest
         FROM "article" AS A
         JOIN "major" AS M
         ON M.id = A.majorid

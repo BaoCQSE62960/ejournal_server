@@ -116,7 +116,7 @@ router.get('/manuscript/', checkRoleEditor, async (req, res) => {
             ;`,
             [
                 sob.PUBLIC,
-                sob.RESTRICTED,
+                sob.RESTRICTED
             ]
         );
 

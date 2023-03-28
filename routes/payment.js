@@ -16,6 +16,20 @@ async function checkRoleAdmin(req, res, next) {
   }
 }
 
+async function checkRoleEditor(req, res, next) {
+  try {
+    if (req.session.user.role == sob.EDITOR ||
+      req.session.user.role == sob.CEDITOR) {
+      next();
+    } else {
+      res.status(400).json({ msg: `Vai trò của người dùng không phù hợp` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống' });
+  }
+}
+
 async function checkPersonal(req, res, next) {
   try {
     if (req.session.user.role == sob.MEMBER || req.session.user.role == sob.AUTHOR) {
@@ -136,6 +150,57 @@ router.get('/mypayment/', checkPersonal, async (req, res) => {
       [req.session.user.id]
     );
     res.status(200).json({ list: list.rows });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ msg: 'Lỗi hệ thống!' });
+  }
+});
+
+//Check author payment
+router.post('/authorpayment/', checkRoleEditor, async (req, res) => {
+  try {
+    const { articleid, accountid } = req.body;
+    const author = await pool.query(
+      `SELECT accountid, articleid
+      FROM  "articleauthor" 
+      WHERE iscorresponding = $1 
+      AND accountid = $2 
+      AND articleid = $3 
+      LIMIT 1
+      ;`,
+      [
+        true,
+        accountid,
+        articleid
+      ]
+    );
+
+    if (author.rows[0]) {
+      const list = await pool.query(
+        `SELECT PT.amount, PT.creationtime, A.title AS title, U.fullname AS fullname, A.openaccess AS type
+        FROM "personaltransaction" AS PT
+        JOIN "article" AS A ON A.id = PT.articleid 
+        JOIN "account" AS U ON U.id = PT.accountid 
+        WHERE PT.articleid = $1 
+        AND PT.accountid = $2 
+        AND A.openaccess = $3 
+        LIMIT 1
+        ;`,
+        [
+          articleid,
+          accountid,
+          true
+        ]
+      );
+
+      if (list.rows[0]) {
+        res.status(200).json({ list: list.rows });
+      } else {
+        res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+      }
+    } else {
+      res.status(400).json({ msg: 'Không tìm thấy thông tin' });
+    }
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });

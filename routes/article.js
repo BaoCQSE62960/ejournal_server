@@ -736,13 +736,10 @@ router.post("/public/",
         `SELECT A.id, A.title
         FROM "article" AS A
         JOIN "review" AS R ON A.id = R.articleid 
-        WHERE A.status = $1 AND R.accountid = $2
+        WHERE R.accountid = $1
         ORDER BY id
         DESC`,
-        [
-          sob.PENDING,
-          req.session.user.id
-        ]
+        [req.session.user.id]
       );
 
       if (
