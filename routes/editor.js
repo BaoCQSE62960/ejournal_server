@@ -105,10 +105,12 @@ async function checkArticleStatusForChief(req, res, next) {
 //GET Manuscript list (Editor)
 router.get('/manuscript/', checkRoleEditor, async (req, res) => {
     try {
-        const list = await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status
+        const list = await pool.query(`SELECT J.id, J.title, M.name as majorname, J.status, AA.accountid, J.openaccess
             FROM "article" AS J 
             JOIN "major" AS M
             ON J.majorid = M.id
+            JOIN "articleauthor" AS AA
+            ON AA.articleid = J.id
             WHERE J.status != $1 
             AND J.status != $2
             ORDER BY id
@@ -116,7 +118,7 @@ router.get('/manuscript/', checkRoleEditor, async (req, res) => {
             ;`,
             [
                 sob.PUBLIC,
-                sob.RESTRICTED
+                sob.RESTRICTED,
             ]
         );
 
