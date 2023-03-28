@@ -34,8 +34,4 @@ router.get('/role/', checkRoleAdmin, async (req, res) => {
   }
 });
 
-//GET Personal transaction list
-
-//GET University transaction list
-
 module.exports = router;

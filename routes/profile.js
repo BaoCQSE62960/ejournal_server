@@ -36,16 +36,16 @@ router.put('/changepassword/', async (req, res) => {
 //View personal profile
 router.get('/', async (req, res) => {
   try {
-    const list =
+    const profile =
       await pool.query(
         `SELECT id, fullname, avatar, gender, phone, email 
-          FROM "account" 
-          WHERE id = $1
-          LIMIT 1
-          ;`,
+        FROM "account" 
+        WHERE id = $1
+        LIMIT 1
+        ;`,
         [req.session.user.id]
       );
-    res.status(200).json(list.rows);
+    res.status(200).json(profile.rows);
   } catch (error) {
     console.log(error);
     res.status(400).json({ msg: 'Lỗi hệ thống!' });
@@ -58,8 +58,8 @@ router.put('/update/', async (req, res) => {
     const { fullname, avatar, gender, phone, email } = req.body;
     const updateProfile = await pool.query(
       `UPDATE "account" 
-        SET fullname = $2, avatar = $3, gender = $4, phone = $5, email = $6 
-        WHERE id = $1`,
+      SET fullname = $2, avatar = $3, gender = $4, phone = $5, email = $6 
+      WHERE id = $1`,
       [
         req.session.user.id,
         fullname,

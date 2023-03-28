@@ -38,34 +38,6 @@ router.get('/', checkRoleAdmin, async (req, res) => {
   }
 });
 
-//Add account
-// router.put('/add/', checkRoleAdmin, async (req, res) => {
-//   try {
-//     const { username, password, fullname, avatar, gender, phone, email, accesstype, roleid } = req.body;
-//     const newAccount =
-//       await pool.query(`INSERT INTO "account"(username,password,fullname,avatar,gender,phone,email,accesstype,status,roleid) 
-//       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'OFFLINE',$9) RETURNING id;`,
-//         [
-//           username,
-//           await helpers.hashPassword(
-//             password
-//           ),
-//           fullname,
-//           avatar,
-//           gender,
-//           phone,
-//           email,
-//           accesstype,
-//           roleid,
-//         ]
-//       );
-//     res.status(200).json();
-//   } catch (error) {
-//     console.log(error);
-//     res.status(400).json({ msg: 'Lỗi hệ thống!' });
-//   }
-// });
-
 //View account
 router.post('/info/', checkRoleAdmin, async (req, res) => {
   try {

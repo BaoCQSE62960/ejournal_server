@@ -192,7 +192,7 @@ router.get('/article/', checkRoleEditorInChief, async (req, res) => {
     }
 });
 
-//Accept article
+//Accept article (Editor)
 router.put('/accept/',
     checkRoleEditor,
     checkArticleStatus,

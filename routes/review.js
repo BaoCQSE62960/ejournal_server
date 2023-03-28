@@ -258,14 +258,20 @@ router.get('/articlereviewed/', checkRoleReviewer, async (req, res) => {
     const userId = req.session.user.id;
 
     const list =
-      await pool.query(`SELECT R.id as reviewid, A.id as articleid, A.title
+      await pool.query(`SELECT A.title, M.name AS major, A.status, R.suggest
         FROM "article" AS A
+        JOIN "major" AS M
+        ON M.id = A.majorid
         JOIN "review" AS R
-        ON A.id = R.creatorid
-        WHERE R.creatorid = $1
-        ORDER BY reviewid
+        ON A.id = R.articleid
+        WHERE R.accountid = $1
+        AND A.status = $2
+        ORDER BY A.id
         DESC`,
-        [userId]
+        [
+          userId,
+          sob.REVIEWED
+        ]
       );
 
     res.status(200).json({ list: list.rows });
