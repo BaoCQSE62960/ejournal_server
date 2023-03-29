@@ -113,12 +113,14 @@ router.get('/manuscript/', checkRoleEditor, async (req, res) => {
             ON AA.articleid = J.id
             WHERE J.status != $1 
             AND J.status != $2
+            AND AA.isCorresponding = $3
             ORDER BY id
             DESC
             ;`,
             [
                 sob.PUBLIC,
                 sob.RESTRICTED,
+                true
             ]
         );
 
